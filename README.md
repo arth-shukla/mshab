@@ -2,7 +2,7 @@
 
 _A Benchmark for Low-Level Manipulation in Home Rearrangement Tasks_
 
-<a href="https://arth-shukla.github.io/mshab/"><img src="./assets/teaser.jpg" width="100%" /></a>
+<a href="https://arth-shukla.github.io/mshab/"><img src="./docs/static/images/mshab_banner_fullsize.jpg" width="100%" /></a>
 
 
 
