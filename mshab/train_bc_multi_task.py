@@ -1,11 +1,13 @@
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_continuous_actionpy
+import itertools
 import json
 import os
 import random
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
+from functools import cached_property
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import h5py
 from dacite import from_dict
@@ -20,16 +22,34 @@ import torch.nn.functional as F
 
 # ManiSkill specific imports
 import mani_skill.envs
+from mani_skill import ASSET_DIR
 from mani_skill.utils import common
 
-from mshab.agents.bc import Agent
-from mshab.envs.make import EnvConfig, make_env
-from mshab.utils.array import to_tensor
+from mshab.agents.bc import AgentMultiTask
+from mshab.envs.multi_task import (
+    AllSubtaskEnvConfig,
+    AllSubtaskTrain,
+    PerSubtaskEnvConfig,
+)
+from mshab.envs.wrappers.vector import (
+    VectorObservationWrapper,
+    VectorRecordEpisodeStatistics,
+)
+from mshab.utils.array import recursive_slice, to_tensor
 from mshab.utils.config import parse_cfg
-from mshab.utils.dataclasses import default_field
 from mshab.utils.dataset import ClosableDataLoader, ClosableDataset
 from mshab.utils.logger import Logger, LoggerConfig
 from mshab.utils.time import NonOverlappingTimeProfiler
+
+
+ENV_KEY_TO_ONE_HOT_IDX = dict(pick=0, place=1, open=2, close=3)
+ENV_KEY_TO_ONE_HOT_TENSOR = dict(
+    (
+        k,
+        torch.tensor([0] * v + [1] + [0] * (max(ENV_KEY_TO_ONE_HOT_IDX.values()) - v)),
+    )
+    for k, v in ENV_KEY_TO_ONE_HOT_IDX.items()
+)
 
 
 @dataclass
@@ -39,7 +59,7 @@ class BCConfig:
     # Training
     lr: float = 3e-4
     """learning rate"""
-    batch_size: int = 512
+    batch_size: int = 2048
     """batch size"""
 
     # Running
@@ -57,17 +77,13 @@ class BCConfig:
     # Dataset
     data_dir_fp: str = None
     """path to data dir containing data .h5 files"""
-    max_cache_size: int = 0
+    max_image_cache_size: Union[int, Literal["all"]] = 0
     """max num data points to cache in cpu memory"""
     trajs_per_obj: Union[str, int] = "all"
     """num trajectories to use per object"""
 
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
-
-    # passed from env/eval_env cfg
-    num_eval_envs: int = field(init=False)
-    """the number of parallel environments"""
 
     def _additional_processing(self):
         assert self.name == "bc", "Wrong algo config"
@@ -82,71 +98,26 @@ class BCConfig:
 @dataclass
 class TrainConfig:
     seed: int
-    eval_env: EnvConfig
     algo: BCConfig
     logger: LoggerConfig
 
     wandb_id: Optional[str] = None
-    resume_logdir: Optional[Union[Path, str]] = None
     model_ckpt: Optional[Union[Path, int, str]] = None
 
     def __post_init__(self):
-        assert (
-            self.resume_logdir is None or not self.logger.clear_out
-        ), "Can't resume to a cleared out logdir!"
-
-        if self.resume_logdir is not None:
-            self.resume_logdir = Path(self.resume_logdir)
-            old_config_path = self.resume_logdir / "config.yml"
-            if old_config_path.absolute() == Path(PASSED_CONFIG_PATH).absolute():
-                assert (
-                    self.resume_logdir == self.logger.exp_path
-                ), "if setting resume_logdir, must set logger workspace and exp_name accordingly"
-            else:
-                assert (
-                    old_config_path.exists()
-                ), f"Couldn't find old config at path {old_config_path}"
-                old_config = get_mshab_train_cfg(
-                    parse_cfg(default_cfg_path=old_config_path)
-                )
-                self.logger.workspace = old_config.logger.workspace
-                self.logger.exp_path = old_config.logger.exp_path
-                self.logger.log_path = old_config.logger.log_path
-                self.logger.model_path = old_config.logger.model_path
-                self.logger.train_video_path = old_config.logger.train_video_path
-                self.logger.eval_video_path = old_config.logger.eval_video_path
-
-            if self.model_ckpt is None:
-                self.model_ckpt = self.logger.model_path / "latest.pt"
-
         if self.model_ckpt is not None:
             self.model_ckpt = Path(self.model_ckpt)
             assert self.model_ckpt.exists(), f"Could not find {self.model_ckpt}"
 
-        self.algo.num_eval_envs = self.eval_env.num_envs
         self.algo._additional_processing()
 
         self.logger.exp_cfg = asdict(self)
         del self.logger.exp_cfg["logger"]["exp_cfg"]
-        del self.logger.exp_cfg["resume_logdir"]
         del self.logger.exp_cfg["model_ckpt"]
 
 
 def get_mshab_train_cfg(cfg: TrainConfig) -> TrainConfig:
     return from_dict(data_class=TrainConfig, data=OmegaConf.to_container(cfg))
-
-
-# NOTE (arth): we assume any (leaf) list entries or dict values are tensors
-#   this implementation would be wrong if, for example, some values were ints
-def recursive_tensor_size_bytes(obj):
-    extra_obj_size = 0
-    if isinstance(obj, dict):
-        extra_obj_size = sum([recursive_tensor_size_bytes(v) for v in obj.values()])
-    elif isinstance(obj, list) or isinstance(obj, tuple):
-        extra_obj_size = sum([recursive_tensor_size_bytes(x) for x in obj])
-    elif isinstance(obj, torch.Tensor):
-        extra_obj_size = obj.nelement() * obj.element_size()
-    return sys.getsizeof(obj) + extra_obj_size
 
 
 def recursive_h5py_to_numpy(h5py_obs, slice=None):
@@ -163,29 +134,147 @@ def recursive_h5py_to_numpy(h5py_obs, slice=None):
     return h5py_obs[:]
 
 
+class ConcatOneHotWrapper(VectorObservationWrapper):
+    @cached_property
+    def single_observation_space(self):
+        assert isinstance(self.env.single_observation_space, gym.spaces.Dict)
+        spaces = self.env.single_observation_space.spaces.copy()
+
+        # Combine state and subtask_one_hot spaces
+        assert "state" in spaces and "subtask_one_hot" in spaces
+        state_space = spaces["state"]
+        subtask_space = spaces.pop("subtask_one_hot")
+
+        # Create new state space with combined shape
+        spaces["state"] = gym.spaces.Box(
+            low=np.concatenate([state_space.low, subtask_space.low]),
+            high=np.concatenate([state_space.high, subtask_space.high]),
+            dtype=state_space.dtype,
+        )
+
+        return gym.spaces.Dict(spaces)
+
+    @cached_property
+    def observation_space(self):
+        assert isinstance(self.env.observation_space, gym.spaces.Dict)
+        spaces = self.env.observation_space.spaces.copy()
+
+        # Combine state and subtask_one_hot spaces
+        assert "state" in spaces and "subtask_one_hot" in spaces
+        state_space = spaces["state"]
+        subtask_space = spaces.pop("subtask_one_hot")
+
+        # Create new state space with combined shape
+        spaces["state"] = gym.spaces.Box(
+            low=np.concatenate([state_space.low, subtask_space.low], axis=-1),
+            high=np.concatenate([state_space.high, subtask_space.high], axis=-1),
+            dtype=state_space.dtype,
+        )
+
+        return gym.spaces.Dict(spaces)
+
+    def observation(self, observation: Dict):
+        assert "state" in observation
+        assert "subtask_one_hot" in observation
+        observation["state"] = torch.cat(
+            [observation["state"], observation.pop("subtask_one_hot")], dim=1
+        )
+        return observation
+
+
+def make_multi_task_env(
+    tasks: List[str] = ["tidy_house"],
+    subtasks: List[str] = ["pick", "place"],
+    num_envs_per_subtask: int = 2,
+    max_episode_steps: int = 200,
+) -> Union[AllSubtaskTrain, ConcatOneHotWrapper, VectorRecordEpisodeStatistics]:
+    all_subtask_cfg = AllSubtaskEnvConfig(
+        obs_mode="rgbd",
+        control_mode="pd_joint_delta_pos",
+        reward_mode="normalized_dense",
+        render_mode="all",
+        shader_dir="minimal",
+        robot_uids="fetch",
+    )
+
+    per_subtask_cfgs = dict(
+        (
+            subtask,
+            PerSubtaskEnvConfig(
+                env_id=f"{subtask.capitalize()}SubtaskTrain-v0",
+                num_envs=num_envs_per_subtask,  # Reduced for testing
+                max_episode_steps=max_episode_steps,
+                task_plan_fp=(
+                    ASSET_DIR
+                    / f"scene_datasets/replica_cad_dataset/rearrange/task_plans/{task}/{subtask}/train/all.json"
+                ),
+                spawn_data_fp=(
+                    ASSET_DIR
+                    / f"scene_datasets/replica_cad_dataset/rearrange/spawn_data/{task}/{subtask}/train/spawn_data.pt"
+                ),
+                continuous_task=True,
+                env_kwargs=dict(
+                    robot_force_mult=0.001,
+                    robot_force_penalty_min=0.2,
+                    target_randomization=False,
+                ),
+            ),
+        )
+        for task, subtask in itertools.product(tasks, subtasks)
+    )
+
+    # Create the combined environment
+    envs = AllSubtaskTrain(
+        all_subtask_env_kwargs=all_subtask_cfg,
+        per_subtask_env_kwargs=per_subtask_cfgs,
+        env_key_to_idx=ENV_KEY_TO_ONE_HOT_IDX,
+        # keep subtask_env_wrappers as default
+    )
+    envs = VectorRecordEpisodeStatistics(envs, max_episode_steps=max_episode_steps)
+    return envs
+
+
 class DPDataset(ClosableDataset):  # Load everything into memory
     def __init__(
         self,
         data_path,
-        obs_horizon,
-        pred_horizon,
-        control_mode,
+        frame_stack=3,
         trajs_per_obj="all",
         max_image_cache_size=0,
         truncate_trajectories_at_success=False,
     ):
         data_path = Path(data_path)
         if data_path.is_dir():
-            h5_fps = [
-                data_path / fp for fp in os.listdir(data_path) if fp.endswith(".h5")
-            ]
+            h5_fps: List[Path] = []
+            file_subtask_types = []
+            for root, _, files in os.walk(data_path):
+                root = Path(root)
+                for fp in files:
+                    if fp.endswith(".h5"):
+                        h5_fps.append(root / fp)
+                        subtask_type = root.name
+                        assert subtask_type in [
+                            "pick",
+                            "place",
+                            "open",
+                            "close",
+                        ], f"dataset assumes each file is in a dir named after the subtask type, but {Path(root) / fp} is not"
+                        file_subtask_types.append(subtask_type)
         else:
             h5_fps = [data_path]
+            subtask_type = data_path.parent.name
+            assert subtask_type in [
+                "pick",
+                "place",
+                "open",
+                "close",
+            ], f"dataset assumes each file is in a dir named after the subtask type, but {data_path} is not"
+            file_subtask_types = [subtask_type]
 
-        trajectories = dict(actions=[], observations=[])
+        trajectories = dict(actions=[], observations=[], subtask_one_hot=[])
         num_cached = 0
-        self.h5_files = []
-        for fp_num, fp in enumerate(h5_fps):
+        self.h5_files: List[h5py.File] = []
+        for fp_num, (fp, subtask_type) in enumerate(zip(h5_fps, file_subtask_types)):
             f = h5py.File(fp, "r")
             num_uncached_this_file = 0
 
@@ -197,6 +286,9 @@ class DPDataset(ClosableDataset):  # Load everything into memory
             for k in tqdm(keys, desc=f"hf file {fp_num}"):
                 obs, act = f[k]["obs"], f[k]["actions"][:]
 
+                # note: len(obs) == len(act) + 1 == len(success) + 1, where last obs is a
+                #   "next_obs" with no associated action
+                # hence, we will cut off the last obs, as it is not useful in BC
                 if truncate_trajectories_at_success:
                     success: List[bool] = f[k]["success"][:].tolist()
                     success_cutoff = min(success.index(True) + 1, len(success))
@@ -218,8 +310,7 @@ class DPDataset(ClosableDataset):  # Load everything into memory
                     x[:, None] if len(x.shape) == 1 else x for x in state_obs_list
                 ]
                 state_obs = torch.from_numpy(np.concatenate(state_obs_list, axis=1))
-                # don't cut off actions in case we are able to use in place of padding
-                act = torch.from_numpy(act)
+                act = torch.from_numpy(act)[: success_cutoff + 1]
 
                 pixel_obs = dict(
                     fetch_head_depth=obs["sensor_data"]["fetch_head"]["depth"],
@@ -240,49 +331,31 @@ class DPDataset(ClosableDataset):  # Load everything into memory
 
                 trajectories["actions"].append(act)
                 trajectories["observations"].append(dict(state=state_obs, **pixel_obs))
+                trajectories["subtask_one_hot"].append(
+                    ENV_KEY_TO_ONE_HOT_TENSOR[subtask_type]
+                )
 
             if num_uncached_this_file == 0:
                 f.close()
             else:
                 self.h5_files.append(f)
 
-        # Pre-compute all possible (traj_idx, start, end) tuples, this is very specific to Diffusion Policy
-        if (
-            "delta_pos" in control_mode
-            or control_mode == "base_pd_joint_vel_arm_pd_joint_vel"
-        ):
-            self.pad_action_arm = torch.zeros(
-                (trajectories["actions"][0].shape[1] - 1,)
-            )
-            # to make the arm stay still, we pad the action with 0 in 'delta_pos' control mode
-            # gripper action needs to be copied from the last action
-        else:
-            raise NotImplementedError(f"Control Mode {control_mode} not supported")
-        self.obs_horizon, self.pred_horizon = obs_horizon, pred_horizon = (
-            obs_horizon,
-            pred_horizon,
-        )
         self.slices = []
         num_traj = len(trajectories["actions"])
         total_transitions = 0
         for traj_idx in range(num_traj):
             # NOTE (arth): since we cut off data at first success, we might have extra actions available
             #   after the end of slice which we can use instead of hand-made padded zero actions
-            L = trajectories["observations"][traj_idx]["state"].shape[0] - 1
+            L = trajectories["observations"][traj_idx]["state"].shape[0]
             total_transitions += L
 
-            # |o|o|                             observations: 2
-            # | |a|a|a|a|a|a|a|a|               actions executed: 8
-            # |p|p|p|p|p|p|p|p|p|p|p|p|p|p|p|p| actions predicted: 16
-            pad_before = obs_horizon - 1
-            # Pad before the trajectory, so the first action of an episode is in "actions executed"
-            # obs_horizon - 1 is the number of "not used actions"
-            pad_after = pred_horizon - obs_horizon
-            # Pad after the trajectory, so all the observations are utilized in training
-            # Note that in the original code, pad_after = act_horizon - 1, but I think this is not the best choice
+            # note that the last obs is a "next_obs" cut off in our __init__
+            # |PAD|PAD|o|o|o|...|o|    o    |     frame_stack: 3
+            # |   |   |a|a|a|...|a|(lastact)|
+            pad_before = frame_stack - 1
             self.slices += [
-                (traj_idx, start, start + pred_horizon)
-                for start in range(-pad_before, L - pred_horizon + pad_after)
+                (traj_idx, start, start + frame_stack, start + frame_stack - 1)
+                for start in range(-pad_before, L - frame_stack)
             ]  # slice indices follow convention [start, end)
 
         print(
@@ -292,38 +365,38 @@ class DPDataset(ClosableDataset):  # Load everything into memory
         self.trajectories = trajectories
 
     def __getitem__(self, index):
-        traj_idx, start, end = self.slices[index]
+        traj_idx, start, end, timestep = self.slices[index]
         L, act_dim = self.trajectories["actions"][traj_idx].shape
 
         obs_traj = self.trajectories["observations"][traj_idx]
-        obs_seq = {}
+        obs_seq = dict(pixels=dict(), state=None)
         for k, v in obs_traj.items():
-            obs_seq[k] = v[
-                max(0, start) : start + self.obs_horizon
-            ]  # start+self.obs_horizon is at least 1
-            if len(obs_seq[k].shape) == 4:
-                obs_seq[k] = to_tensor(obs_seq[k]).permute(0, 3, 2, 1)  # FS, D, H, W
-            if start < 0:  # pad before the trajectory
-                pad_obs_seq = torch.stack([obs_seq[k][0]] * abs(start), dim=0)
-                obs_seq[k] = torch.cat((pad_obs_seq, obs_seq[k]), dim=0)
-            # don't need to pad obs after the trajectory, see the above char drawing
+            if k == "state":
+                obs_seq[k] = v[timestep]
+            else:
+                obs_seq["pixels"][k] = v[
+                    max(0, start) : end
+                ]  # start+self.frame_stack is at least 1
+                if len(obs_seq["pixels"][k].shape) == 4:
+                    obs_seq["pixels"][k] = to_tensor(obs_seq["pixels"][k]).permute(
+                        0, 3, 2, 1
+                    )  # FS, D, H, W
+                if start < 0:  # pad before the trajectory
+                    pad_obs_seq = torch.stack(
+                        [obs_seq["pixels"][k][0]] * abs(start), dim=0
+                    )
+                    obs_seq["pixels"][k] = torch.cat(
+                        (pad_obs_seq, obs_seq["pixels"][k]), dim=0
+                    )
+        assert "state" in obs_seq, "state must be in obs_seq"
+        obs_seq["subtask_one_hot"] = self.trajectories["subtask_one_hot"][traj_idx]
 
-        act_seq = self.trajectories["actions"][traj_idx][max(0, start) : end]
-        if start < 0:  # pad before the trajectory
-            act_seq = torch.cat([act_seq[0].repeat(-start, 1), act_seq], dim=0)
-        if end > L:  # pad after the trajectory
-            gripper_action = act_seq[-1, -1]  # assume gripper is with pos controller
-            pad_action = torch.cat((self.pad_action_arm, gripper_action[None]), dim=0)
-            act_seq = torch.cat([act_seq, pad_action.repeat(end - L, 1)], dim=0)
-            # making the robot (arm and gripper) stay still
-        assert (
-            obs_seq["state"].shape[0] == self.obs_horizon
-            and act_seq.shape[0] == self.pred_horizon
+        act_seq = self.trajectories["actions"][traj_idx][timestep]
+
+        return dict(
+            observations=obs_seq,
+            actions=act_seq,
         )
-        return {
-            "observations": obs_seq,
-            "actions": act_seq,
-        }
 
     def __len__(self):
         return len(self.slices)
@@ -344,9 +417,8 @@ def train(cfg: TrainConfig):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print("making eval env")
-    eval_envs = make_env(
-        cfg.eval_env,
-        video_path=cfg.logger.eval_video_path,
+    eval_envs = make_multi_task_env(
+        tasks=["tidy_house"], subtasks=["pick", "place"], num_envs_per_subtask=63
     )
     assert isinstance(
         eval_envs.single_action_space, gym.spaces.Box
@@ -360,7 +432,7 @@ def train(cfg: TrainConfig):
     # -------------------------------------------------------------------------------------------------
     # AGENT
     # -------------------------------------------------------------------------------------------------
-    agent = Agent(eval_obs, eval_envs.unwrapped.single_action_space.shape).to(device)
+    agent = AgentMultiTask(eval_obs, eval_envs.single_action_space.shape).to(device)
     optimizer = torch.optim.Adam(
         agent.parameters(),
         lr=cfg.algo.lr,
@@ -391,15 +463,16 @@ def train(cfg: TrainConfig):
     # -------------------------------------------------------------------------------------------------
     # DATALOADER
     # -------------------------------------------------------------------------------------------------
-    bc_dataset = BCDataset(
+    bc_dataset = DPDataset(
         cfg.algo.data_dir_fp,
-        cfg.algo.max_cache_size,
-        cat_state=cfg.eval_env.cat_state,
-        cat_pixels=cfg.eval_env.cat_pixels,
+        frame_stack=3,
         trajs_per_obj=cfg.algo.trajs_per_obj,
+        max_image_cache_size=cfg.algo.max_image_cache_size,
+        truncate_trajectories_at_success=True,
     )
+
     logger.print(
-        f"Made BC Dataset with {len(bc_dataset)} samples at {cfg.algo.trajs_per_obj} trajectories per object for {len(bc_dataset.obj_names_in_loaded_order)} objects",
+        f"Made BC Dataset with {len(bc_dataset)} samples at {cfg.algo.trajs_per_obj} trajectories per object",
         flush=True,
     )
     bc_dataloader = ClosableDataLoader(
@@ -407,6 +480,7 @@ def train(cfg: TrainConfig):
         batch_size=cfg.algo.batch_size,
         shuffle=True,
         num_workers=2,
+        persistent_workers=True,
     )
 
     epoch = 0
@@ -417,22 +491,23 @@ def train(cfg: TrainConfig):
 
     def store_env_stats(key):
         assert key == "eval", "Only eval env for BC"
-        log_env = eval_envs
         logger.store(
             key,
-            return_per_step=common.to_tensor(log_env.return_queue, device=device)
+            return_per_step=common.to_tensor(eval_envs.return_queue, device=device)
             .float()
             .mean()
-            / log_env.max_episode_steps,
-            success_once=common.to_tensor(log_env.success_once_queue, device=device)
+            / eval_envs.max_episode_steps,
+            success_once=common.to_tensor(eval_envs.success_once_queue, device=device)
             .float()
             .mean(),
-            success_at_end=common.to_tensor(log_env.success_at_end_queue, device=device)
+            success_at_end=common.to_tensor(
+                eval_envs.success_at_end_queue, device=device
+            )
             .float()
             .mean(),
-            len=common.to_tensor(log_env.length_queue, device=device).float().mean(),
+            len=common.to_tensor(eval_envs.length_queue, device=device).float().mean(),
         )
-        log_env.reset_queues()
+        eval_envs.reset_queues()
 
     print("start")
     timer = NonOverlappingTimeProfiler()
@@ -446,11 +521,13 @@ def train(cfg: TrainConfig):
         )
 
         # let agent update
+        logger.print("Training")
         tot_loss, n_samples = 0, 0
-        for obs, act in iter(bc_dataloader):
-            obs, act = to_tensor(obs, device=device, dtype="float"), to_tensor(
-                act, device=device, dtype="float"
-            )
+        pbar = tqdm(iter(bc_dataloader), total=len(bc_dataloader), desc="Training")
+        for batch in pbar:
+            obs, act = to_tensor(
+                batch["observations"], device=device, dtype=torch.float
+            ), to_tensor(batch["actions"], device=device, dtype=torch.float)
 
             def recursive_shape(x):
                 if isinstance(x, dict):
@@ -468,11 +545,13 @@ def train(cfg: TrainConfig):
             optimizer.step()
 
             tot_loss += loss.item()
+            pbar.update(act.size(0))
         loss_logs = dict(loss=tot_loss / n_samples)
         timer.end(key="train")
 
         # Log
         if check_freq(cfg.algo.log_freq):
+            pbar.set_description("Logging")
             logger.store(tag="losses", **loss_logs)
             if epoch > 0:
                 logger.store("time", **timer.get_time_logs(epoch))
@@ -481,6 +560,7 @@ def train(cfg: TrainConfig):
 
         # Evaluation
         if cfg.algo.eval_freq:
+            pbar.set_description("Evaluating")
             if check_freq(cfg.algo.eval_freq):
                 agent.eval()
                 eval_obs, _ = eval_envs.reset()  # don't seed here
@@ -497,6 +577,7 @@ def train(cfg: TrainConfig):
 
         # Checkpoint
         if check_freq(cfg.algo.save_freq):
+            pbar.set_description("Saving")
             if cfg.algo.save_backup_ckpts:
                 save(logger.model_path / f"{epoch}_ckpt.pt")
             save(logger.model_path / "latest.pt")

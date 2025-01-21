@@ -290,6 +290,49 @@ class Logger:
 
         return self.stats
 
+    def print_summary(self):
+        """Prints a clean summary of all logged statistics grouped by tags"""
+        self.print("\n=== Logging Summary ===", color="green", bold=True)
+
+        # Group stats by tags
+        tag_groups = {}
+        for stat_name, value in self.stats.items():
+            tag, metric = stat_name.split("/", 1)
+            if tag not in tag_groups:
+                tag_groups[tag] = {}
+            tag_groups[tag][metric] = value
+
+        # Print each group
+        for tag, metrics in tag_groups.items():
+            self.print(f"\n{tag}:", color="blue", bold=True)
+
+            # Find the longest metric name for alignment
+            max_len = max(len(name) for name in metrics.keys())
+
+            # Print each metric with aligned values
+            for metric, value in metrics.items():
+                if isinstance(value, (int, np.integer)):
+                    formatted_value = f"{value:,d}"
+                elif isinstance(value, (float, np.floating)):
+                    formatted_value = f"{value:.4f}"
+                else:
+                    formatted_value = str(value)
+
+                padding = " " * (max_len - len(metric))
+                self.print(f"  {metric}{padding} : {formatted_value}")
+
+        # Print best values if any
+        if self.best_stats:
+            self.print("\nBest Values:", color="cyan", bold=True)
+            max_len = max(len(name) for name in self.best_stats.keys())
+            for name, data in self.best_stats.items():
+                padding = " " * (max_len - len(name))
+                self.print(
+                    f"  {name}{padding} : {data['val']:.4f} (step {data['step']})"
+                )
+
+        self.print("\n")
+
     def reset(self):
         self.data = defaultdict(dict)
         self.stats = {}

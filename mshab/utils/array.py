@@ -92,9 +92,13 @@ def to_numpy(array: Union[Array, Sequence], dtype=None) -> np.ndarray:
     if isinstance(array, (dict)):
         return {k: to_numpy(v, dtype=dtype) for k, v in array.items()}
     if isinstance(array, torch.Tensor):
-        return array.cpu().numpy().astype(dtype)
+        if dtype is not None:
+            return array.cpu().numpy().astype(dtype)
+        return array.cpu().numpy()
     if isinstance(array, np.ndarray):
-        return array.astype(dtype)
+        if dtype is not None:
+            return array.astype(dtype)
+        return array
     if (
         isinstance(array, bool)
         or isinstance(array, str)
@@ -103,4 +107,6 @@ def to_numpy(array: Union[Array, Sequence], dtype=None) -> np.ndarray:
     ):
         return array
 
-    return np.array(array, dtype=dtype)
+    if dtype is not None:
+        return np.array(array, dtype=dtype)
+    return np.array(array)

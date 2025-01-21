@@ -1,1 +1,3 @@
+from .obervation_wrapper import VectorObservationWrapper
 from .record_episode_statistics import VectorRecordEpisodeStatistics
+from .record_video import RecordVideo

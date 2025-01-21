@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import gymnasium as gym
 
+import numpy as np
 import torch
 
 from mani_skill.utils import common
@@ -138,20 +139,43 @@ class AllSubtaskTrain(gym.vector.VectorEnv):
         if not self.envs:
             raise ValueError("No environments were created")
 
-        self.device = self.envs[0].device
-
         # Store env_key_to_idx and create one-hot encodings
         self.env_key_to_idx = env_key_to_idx
         self.one_hot_size = max(env_key_to_idx.values()) + 1
         self.env_one_hots = {}
         for env_key, idx in env_key_to_idx.items():
-            one_hot = torch.zeros(self.one_hot_size, device=self.device)
+            one_hot = torch.zeros(
+                self.one_hot_size, dtype=torch.float, device=self.device
+            )
             one_hot[idx] = 1.0
             self.env_one_hots[env_key] = one_hot
+        print(self.env_one_hots)
 
         # Get observation and action spaces from first env
         self.single_observation_space = self.envs[0].single_observation_space
         self.single_action_space = self.envs[0].single_action_space
+
+        # Modify observation space to include one-hot encoding
+        if isinstance(self.single_observation_space, gym.spaces.Dict):
+            spaces = self.single_observation_space.spaces
+            spaces["subtask_one_hot"] = gym.spaces.Box(
+                low=0, high=1, shape=(self.one_hot_size,), dtype=np.float32
+            )
+            self.single_observation_space = gym.spaces.Dict(spaces)
+        else:
+            old_space: gym.spaces.Box = self.single_observation_space
+            low = np.concatenate([old_space.low, np.zeros(self.one_hot_size)], axis=0)
+            high = np.concatenate([old_space.high, np.ones(self.one_hot_size)], axis=0)
+
+            new_shape = old_space.shape
+            new_shape[0] += self.one_hot_size
+
+            self.single_observation_space = gym.spaces.Box(
+                low=low,
+                high=high,
+                shape=new_shape,
+                dtype=old_space.dtype,
+            )
 
         super().__init__(
             num_envs=sum(env.num_envs for env in self.envs),
@@ -249,6 +273,20 @@ class AllSubtaskTrain(gym.vector.VectorEnv):
 
         return all_obs, all_rewards, all_terminateds, all_truncateds, all_infos
 
+    def render(self):
+        if self.render_mode == "human":
+            self.envs[0].render()
+            return
+        return torch.cat([env.render() for env in self.envs], dim=0)
+
     def close(self):
         for env in self.envs:
             env.close()
+
+    @property
+    def device(self):
+        return self.envs[0].device
+
+    @property
+    def render_mode(self):
+        return self.envs[0].render_mode

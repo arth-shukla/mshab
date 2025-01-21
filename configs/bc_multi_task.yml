@@ -1,0 +1,29 @@
+seed: 0
+
+resume_logdir: null
+model_ckpt: null
+
+algo:
+  name: bc
+
+  lr: 3e-4
+  batch_size: 512
+
+  epochs: 100
+  eval_freq: 1
+  log_freq: 1
+  save_freq: 1
+
+  trajs_per_obj: all
+  data_dir_fp: null
+  max_image_cache_size: 0
+
+  save_backup_ckpts: False
+
+logger:
+  workspace: mshab_exps
+  exp_name: bc-pick
+  clear_out: True
+  
+  tensorboard: True
+  wandb: False
