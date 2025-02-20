@@ -21,7 +21,7 @@ Official repository for the ManiSkill-HAB project by
 
    First, set up a conda environment.
     ```bash
-    conda create -n mshab python=3.9 # python>=3.9 are all supported
+    conda create -n mshab python=3.9
     conda activate mshab
     ```
   
@@ -53,8 +53,8 @@ Official repository for the ManiSkill-HAB project by
     huggingface-cli download arth-shukla/mshab_checkpoints --local-dir mshab_checkpoints
 
     # Dataset (see HuggingFace documentation for faster download options depending on your system)
-    export MS_ASSET_DIR="~/.maniskill" # change to your preferred path (if changed, ideally add to .bashrc)
-    export MSHAB_DATASET_DIR="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange-dataset"
+    export MS_ASSET_DIR="~/.maniskill/data" # change to your preferred path (if changed, ideally add to .bashrc)
+    export MSHAB_DATASET_DIR="$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange-dataset"
     huggingface-cli download --repo-type dataset arth-shukla/MS-HAB-TidyHouse --local-dir "$MSHAB_DATASET_DIR/tidy_house"
     huggingface-cli download --repo-type dataset arth-shukla/MS-HAB-PrepareGroceries --local-dir "$MSHAB_DATASET_DIR/prepare_groceries"
     huggingface-cli download --repo-type dataset arth-shukla/MS-HAB-SetTable --local-dir "$MSHAB_DATASET_DIR/set_table"
@@ -121,7 +121,7 @@ env = gym.make(
     render_mode="rgb_array",
     shader_dir="minimal",
     # TimeLimit args
-    max_episode_steps=200,
+    max_episode_steps=1000,
     # SequentialTask args
     task_plans=plan_data.plans,
     scene_builder_cls=plan_data.dataset,
@@ -166,7 +166,7 @@ MS-HAB uses dataclasses defined in `mshab/envs/planner.py` to store environment 
 - Each subtask is defined with `[Name]Subtask`, which contains information about target objects/articulations, goal positions, handle positions, etc
 - Success and failure conditions for each subtask are defined by `[Name]SubtaskConfig`, which contains settings for each subtask like collision force limits, place/open/close thresholds, etc
 
-Each episode, a new task plan is sampled by the environment. The HAB task plans are saved as json files under `$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/`.
+Each episode, a new task plan is sampled by the environment. The HAB task plans are saved as json files under `$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/`.
 
 `[Name]SubtaskConfig`s can be passed to the environment in the `gym.make` as `task_cfgs=dict(pick=dict(...), place=dict(...), ...)` to tweak thresholds, goal types, etc for success/fail conditions.
 

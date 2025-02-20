@@ -18,11 +18,9 @@ EXP_NAME="$ENV_ID/$GROUP/bc-$SUBTASK-$OBJ-local-trajs_per_obj=$TRAJS_PER_OBJ"
 # shellcheck disable=SC2001
 PROJECT_NAME="MS-HAB-RCAD-bc"
 
-WANDB=False
+WANDB=True
 TENSORBOARD=True
-if [[ -z "${MS_ASSET_DIR}" ]]; then
-    MS_ASSET_DIR="$HOME/.maniskill"
-fi
+MS_ASSET_DIR="$HOME/.maniskill/data"
 
 RESUME_LOGDIR="$WORKSPACE/$EXP_NAME"
 RESUME_CONFIG="$RESUME_LOGDIR/config.yml"
@@ -30,9 +28,9 @@ RESUME_CONFIG="$RESUME_LOGDIR/config.yml"
 MAX_CACHE_SIZE=300000   # safe num for about 64 GiB system memory
 
 if [[ $SUBTASK == "open" || $SUBTASK == "close" ]]; then
-    data_dir_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange-dataset/$TASK/$SUBTASK/$OBJ.h5"
+    data_dir_fp="$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange-dataset/$TASK/$SUBTASK/$OBJ.h5"
 else
-    data_dir_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange-dataset/$TASK/$SUBTASK"
+    data_dir_fp="$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange-dataset/$TASK/$SUBTASK"
 fi
 
 args=(
@@ -40,8 +38,8 @@ args=(
     "logger.exp_name=$EXP_NAME"
     "seed=$SEED"
     "eval_env.env_id=$ENV_ID"
-    "eval_env.task_plan_fp=$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json"
-    "eval_env.spawn_data_fp=$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
+    "eval_env.task_plan_fp=$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json"
+    "eval_env.spawn_data_fp=$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
     "eval_env.frame_stack=1"
     "algo.epochs=$epochs"
     "algo.trajs_per_obj=$TRAJS_PER_OBJ"

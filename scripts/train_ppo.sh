@@ -15,11 +15,9 @@ EXP_NAME="$ENV_ID/$GROUP/ppo-$SUBTASK-$OBJ-local"
 # shellcheck disable=SC2001
 PROJECT_NAME="MS-HAB-RCAD-$(echo $SUBTASK | sed 's/\b\(.\)/\u\1/g')-$TASK-ppo"
 
-WANDB=False
+WANDB=True
 TENSORBOARD=True
-if [[ -z "${MS_ASSET_DIR}" ]]; then
-    MS_ASSET_DIR="$HOME/.maniskill"
-fi
+MS_ASSET_DIR="$HOME/.maniskill/data"
 
 resume_logdir="$WORKSPACE/$EXP_NAME"
 resume_config="$resume_logdir/config.yml"
@@ -50,8 +48,8 @@ args=(
     "logger.exp_name=$EXP_NAME"
     "seed=$SEED"
     "env.env_id=$ENV_ID"
-    "env.task_plan_fp=$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json"
-    "env.spawn_data_fp=$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
+    "env.task_plan_fp=$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json"
+    "env.spawn_data_fp=$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
     "algo.gamma=0.9"
     "algo.update_epochs=8"
     "algo.num_minibatches=16"

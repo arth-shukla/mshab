@@ -29,10 +29,7 @@ GROUP=eval_seq_task-rcad-$TASK-$SUBTASK
 EXP_NAME="eval_seq_task/$TASK/$SUBTASK/$SPLIT/$OBJ/$policy_type"
 # shellcheck disable=SC2001
 PROJECT_NAME="MS-HAB-RCAD-$(echo $SUBTASK | sed 's/\b\(.\)/\u\1/g')-$TASK-sac"
-if [[ -z "${MS_ASSET_DIR}" ]]; then
-    MS_ASSET_DIR="$HOME/.maniskill"
-fi
-
+MS_ASSET_DIR="$HOME/.maniskill/data"
 
 WANDB=False
 TENSORBOARD=True
@@ -90,7 +87,7 @@ else
 
         # extra args
         # shellcheck disable=SC2089
-        spawn_data_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
+        spawn_data_fp="$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
         if [[ $SUBTASK == "pick" ]]; then
                 extra_stat_keys='<list>success, subtask_type, is_grasped, robot_target_pairwise_force, robot_force, robot_cumulative_force</list>'
         elif [[ $SUBTASK == "place" ]]; then
@@ -127,7 +124,7 @@ SAPIEN_NO_DISPLAY=1 python -m mshab.evaluate configs/evaluate.yml \
         max_trajectories=$max_trajectories \
         policy_type=$policy_type \
         eval_env.env_id="$ENV_ID" \
-        eval_env.task_plan_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json" \
+        eval_env.task_plan_fp="$MS_ASSET_DIR/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json" \
         \
         eval_env.make_env="True" \
         \
