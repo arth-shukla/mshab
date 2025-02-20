@@ -15,6 +15,10 @@ Official repository for the ManiSkill-HAB project by
 **[Paper](https://arxiv.org/abs/2412.13211)** | **[Website](https://arth-shukla.github.io/mshab/)** | **[Models](https://huggingface.co/arth-shukla/mshab_checkpoints)** | **[Dataset](https://arth-shukla.github.io/mshab/#dataset-section)** | **[Supplementary](https://sites.google.com/view/maniskill-hab)**
 
 
+## Updates
+
+- 20-02-2025: ManiSkill-HAB has been updated to support ManiSkill3 Beta 18. To update, please either remove and re-clone the `mshab` branch in ManiSkill3, or pull the latest changes from the `mshab` branch in ManiSkill3. Then, `pip install -e ManiSkill` again.
+
 ## Setup and Installation
 
 1. **Install Environments**
