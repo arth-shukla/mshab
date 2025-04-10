@@ -9,7 +9,9 @@ import h5py
 import gymnasium as gym
 
 import numpy as np
+import torch.nn.functional as F
 import torch
+import cv2
 
 from mani_skill import get_commit_info
 from mani_skill.utils import common, gym_utils
@@ -613,6 +615,16 @@ class RecordEpisode(gym.Wrapper):
                                 compression_opts=5,
                             )
                         elif key == "depth":
+                            
+                            ##### SH
+                            # data shape: (201, 50, H, W, 1)
+                            data_tensor = torch.from_numpy(data[..., 0]).float()  # (201, 50, H, W)
+
+                            data_tensor = data_tensor.view(-1, 1, data_tensor.shape[-2], data_tensor.shape[-1])  # (201*50, 1, H, W)
+                            resized_tensor = F.interpolate(data_tensor, size=(16, 16), mode='nearest-exact')  # (201*50, 1, 112, 112)
+                            resized_depth = resized_tensor.view(201, 100, 16, 16, 1).numpy()
+                            data = resized_depth
+
                             group.create_dataset(
                                 key,
                                 data=data[start_ptr:end_ptr, env_idx],
@@ -620,6 +632,7 @@ class RecordEpisode(gym.Wrapper):
                                 compression="gzip",
                                 compression_opts=5,
                             )
+
                         elif key == "seg":
                             group.create_dataset(
                                 key,

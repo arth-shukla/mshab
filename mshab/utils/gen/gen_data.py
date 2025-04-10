@@ -29,7 +29,7 @@ from mshab.utils.logger import Logger, LoggerConfig
 from mshab.utils.time import NonOverlappingTimeProfiler
 
 
-NUM_ENVS = 252
+NUM_ENVS = 100
 SEED = 2024
 MAX_TRAJECTORIES = 1000
 

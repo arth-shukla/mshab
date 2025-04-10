@@ -16,11 +16,37 @@ for task in $(ls -1 "$CKPT_DIR/rl")
 do
     for subtask in $(ls -1 "$CKPT_DIR/rl/$task")
     do
+        if [[ $task == "set_table" ]]; then
+            if [[ $subtask == "close" ]]; then
+                continue
+            fi
+            if [[ $subtask == "open" ]]; then
+                continue
+            fi
+        fi
         for obj_name in $(ls -1 "$CKPT_DIR/rl/$task/$subtask")
         do
-            if [[ ! -e "mshab_exps/gen_data_save_trajectories/$task/$subtask/train/$obj_name" && $obj_name != "all" ]]; then
+            if [[ $obj_name == "all" ]]; then
                 python -m mshab.utils.gen.gen_data "$task" "$subtask" "$obj_name"
             fi
         done
+
     done
 done
+
+# for task in $(ls -1 "$CKPT_DIR/rl")
+# do
+#     if [[ $task == "set_table" ]]; then
+#         for subtask in $(ls -1 "$CKPT_DIR/rl/$task")
+#         do
+#             if [[ $subtask == "pick" ]]; then
+#                 for obj_name in $(ls -1 "$CKPT_DIR/rl/$task/$subtask")
+#                 do
+#                     if [[ $obj_name == "all" ]]; then
+#                         python -m mshab.utils.gen.gen_data "$task" "$subtask" "$obj_name"
+#                     fi
+#                 done
+#             fi
+#         done
+#     fi
+# done

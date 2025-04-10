@@ -5,6 +5,7 @@ import gymnasium as gym
 
 import numpy as np
 import torch
+import torchvision.transforms.functional as F
 
 import sapien.physx as physx
 
@@ -39,6 +40,10 @@ class FetchDepthObservationWrapper(gym.ObservationWrapper):
         fetch_hand_depth = observation["sensor_data"]["fetch_hand"]["depth"].permute(
             0, 3, 1, 2
         )
+        
+        ### Sunghwan
+        fetch_head_depth = F.resize(fetch_head_depth, size=(128, 128), interpolation=F.InterpolationMode.NEAREST)
+        fetch_hand_depth = F.resize(fetch_hand_depth, size=(128, 128), interpolation=F.InterpolationMode.NEAREST)
 
         depth_pixels = (
             dict(
