@@ -602,7 +602,8 @@ class RecordEpisode(gym.Wrapper):
                     if isinstance(data, dict):
                         subgrp = group.create_group(key, track_order=True)
                         for k in data.keys():
-                            recursive_add_to_h5py(subgrp, data[k], k)
+                            if k not in ["fetch_head", "fetch_hand"]:
+                                recursive_add_to_h5py(subgrp, data[k], k)
                     else:
                         if key == "rgb":
                             group.create_dataset(

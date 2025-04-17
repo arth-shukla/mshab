@@ -112,6 +112,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
         require_build_configs_repeated_equally_across_envs=True,
         add_event_tracker_info=False,
         task_cfgs=dict(),
+        cam_dim=None,
         **kwargs,
     ):
         self.task_cfgs: Dict[str, SubtaskConfig] = dict(
@@ -151,6 +152,8 @@ class SequentialTaskEnv(SceneManipulationEnv):
         self._init_config_names = set([tp.init_config_name for tp in task_plans])
 
         self.tp0 = task_plans[0]
+
+        self.cam_dim = cam_dim
 
         super().__init__(*args, robot_uids=robot_uids, **kwargs)
 
@@ -1452,7 +1455,30 @@ class SequentialTaskEnv(SceneManipulationEnv):
 
     @property
     def _default_sensor_configs(self):
-        return []
+        if self.cam_dim is None:
+            return []
+        return [
+            CameraConfig(
+                uid="fetch_head_cam2",
+                pose=Pose.create_from_pq([0, 0, 0], [1, 0, 0, 0]),
+                width=self.cam_dim,
+                height=self.cam_dim,
+                fov=2,
+                near=0.01,
+                far=100,
+                mount=self.agent.robot.links_map["head_camera_link"],
+            ),
+            CameraConfig(
+                uid="fetch_hand_cam2",
+                pose=Pose.create_from_pq([-0.1, 0, 0.1], [1, 0, 0, 0]),
+                width=self.cam_dim,
+                height=self.cam_dim,
+                fov=2,
+                near=0.01,
+                far=100,
+                mount=self.agent.robot.links_map["gripper_link"],
+            ),
+        ]
 
     @property
     def _default_human_render_camera_configs(self):

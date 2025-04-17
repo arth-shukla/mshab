@@ -29,6 +29,8 @@ from mshab.utils.logger import Logger, LoggerConfig
 from mshab.utils.time import NonOverlappingTimeProfiler
 
 
+CAM_DIM = 64
+
 NUM_ENVS = 252
 SEED = 2024
 MAX_TRAJECTORIES = 1000
@@ -122,6 +124,7 @@ def eval(
             robot_force_mult=0.001,
             robot_force_penalty_min=0.2,
             target_randomization=False,
+            cam_dim=CAM_DIM,
         ),
     )
     logger_cfg = LoggerConfig(
