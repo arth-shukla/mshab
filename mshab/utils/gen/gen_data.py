@@ -100,7 +100,7 @@ def eval(
         info_on_video=False,
         debug_video=DEBUG_VIDEO_GEN,
         debug_video_gen=DEBUG_VIDEO_GEN,
-        continuous_task=True,
+        continuous_task=False,
         cat_state=True,
         cat_pixels=False,
         task_plan_fp=(
@@ -344,8 +344,8 @@ def eval(
                 for raw_pose in obj_poses_wrt_tcp.raw_pose[info["success"]].cpu():
                     success_obj_raw_poses_wrt_tcp.append(raw_pose)
 
+        update_pbar()
         if torch.any(info["success"]):
-            update_pbar()
             if len(env_cfg.extra_stat_keys) > 0:
                 torch.save(
                     eval_envs.extra_stats,
@@ -395,9 +395,10 @@ def eval(
             diff = len(eval_envs.return_queue) - pbar.last_print_n
 
         if diff > 0:
+            pbar.set_description(f"{step_num=}", refresh=False)
             pbar.update(diff)
-
-        pbar.set_description(f"{step_num=}")
+        else:
+            pbar.set_description(f"{step_num=}", refresh=True)
 
     while not check_done():
         still_running = subtask_type <= 2

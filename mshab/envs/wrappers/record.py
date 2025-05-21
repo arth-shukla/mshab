@@ -653,20 +653,8 @@ class RecordEpisode(gym.Wrapper):
                         f"RecordEpisode wrapper does not know how to handle observation data of type {type(self._trajectory_buffer.observation)}"
                     )
 
-                # NOTE (arth): we don't save info for now
-                # # NOTE (arth): infos also need special processing
-                # if isinstance(self._trajectory_buffer.info, dict):
-                #     recursive_add_to_h5py(group, self._trajectory_buffer.info, "info")
-                # elif isinstance(self._trajectory_buffer.info, np.ndarray):
-                #     group.create_dataset(
-                #         "info",
-                #         data=self._trajectory_buffer.info[start_ptr:end_ptr, env_idx],
-                #         dtype=self._trajectory_buffer.info.dtype,
-                #     )
-                # else:
-                #     raise NotImplementedError(
-                #         f"RecordEpisode wrapper does not know how to handle info data of type {type(self._trajectory_buffer.info)}"
-                #     )
+                # NOTE (arth): infos also need special processing
+                recursive_add_to_h5py(group, self._trajectory_buffer.info, "info")
 
                 # slice some data to remove the first dummy frame.
                 actions = common.index_dict_array(

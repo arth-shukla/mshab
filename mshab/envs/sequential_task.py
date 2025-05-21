@@ -827,6 +827,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
             robot_cumulative_force=self.robot_cumulative_force,
             **success_checkers,
             **progressive_task_checkers,
+            robot_world_pose=vectorize_pose(self.agent.base_link.pose),
         )
 
     def _progressive_task_check_success(self):
