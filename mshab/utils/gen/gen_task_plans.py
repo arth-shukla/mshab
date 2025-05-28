@@ -593,6 +593,73 @@ def gen_close_task_plans(scene_builder):
     return task_plans
 
 
+def gen_navigate_task_plans(scene_builder):
+    q = transforms3d.quaternions.axangle2quat(np.array([1, 0, 0]), theta=np.deg2rad(90))
+    task_plans = []
+    for init_config_name in tqdm(scene_builder._rearrange_configs):
+        with open(
+            osp.join(
+                ASSET_DIR,
+                "scene_datasets/replica_cad_dataset/rearrange",
+                init_config_name,
+            ),
+            "rb",
+        ) as f:
+            episode_json = json.load(f)
+
+        build_config_name = Path(episode_json["scene_id"]).name
+
+        init_poses = dict()
+        num_per_rigid_obj = defaultdict(int)
+        for obj_path, raw_pose_T in episode_json["rigid_objs"]:
+            obj_name_from_path = obj_path.replace(".object_config.json", "")
+            init_poses[
+                f"{obj_name_from_path}-{num_per_rigid_obj[obj_name_from_path]}"
+            ] = sapien.Pose(q=q) * sapien.Pose(matrix=raw_pose_T)
+            num_per_rigid_obj[obj_name_from_path] += 1
+        target_poses = episode_json["targets"]
+
+        prev_goal_pos = None
+        for base_actor_id in episode_json["info"]["object_labels"].keys():
+            actor_id, actor_num = get_name_num(base_actor_id)
+
+            obj_pos = init_poses[f"{actor_id}-{actor_num}"].p.tolist()
+            goal_pos = (
+                sapien.Pose(q=q) * sapien.Pose(matrix=target_poses[base_actor_id])
+            ).p.tolist()
+
+            # prev goal -> obj
+            task_plans.append(
+                TaskPlan(
+                    subtasks=[
+                        NavigateSubtask(goal_pos=obj_pos, prev_goal_pos=prev_goal_pos)
+                    ],
+                    build_config_name=build_config_name,
+                    init_config_name=init_config_name,
+                )
+            )
+
+            # obj -> place goal
+            task_plans.append(
+                TaskPlan(
+                    subtasks=[
+                        NavigateSubtask(
+                            obj_id=f"{actor_id}-{actor_num}",
+                            goal_pos=goal_pos,
+                            prev_goal_pos=obj_pos,
+                        )
+                    ],
+                    build_config_name=build_config_name,
+                    init_config_name=init_config_name,
+                )
+            )
+
+            prev_goal_pos = goal_pos
+
+    print(f"generated {len(task_plans)} task_plans")
+    return task_plans
+
+
 def parse_args(args=None) -> GenTaskPlanArgs:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -718,107 +785,13 @@ def main():
             )
 
         return
-    elif args.subtask == "navigate":
-        relevant_subtasks = ["pick", "place"]
-        if args.task == "set_table":
-            relevant_subtasks += ["open", "close"]
-
-        subtask_to_plan_data: Dict[str, PlanData] = dict()
-        for subtask_name in relevant_subtasks + ["sequential"]:
-            fp = args.root / args.task / subtask_name / args.split / "all.json"
-            print("Loading", str(fp) + "...")
-            subtask_to_plan_data[subtask_name] = plan_data_from_file(fp)
-
-        subtask_to_uid_to_subtask_data: Dict[str, Dict[str, Subtask]] = dict()
-        for subtask_name in relevant_subtasks:
-            plan_data = subtask_to_plan_data[subtask_name]
-            uid_to_subtask_data = dict()
-            for tp in plan_data.plans:
-                for subtask_data in tp.subtasks:
-                    assert subtask_data.uid not in uid_to_subtask_data
-                    uid_to_subtask_data[subtask_data.uid] = subtask_data
-            subtask_to_uid_to_subtask_data[subtask_name] = uid_to_subtask_data
-
-        subtask_type_counters = defaultdict(int)
-        subtask_to_subtask_uids_made = defaultdict(set)
-        for tp_num, task_plan in enumerate(subtask_to_plan_data["sequential"].plans):
-            for subtask_num, subtask in enumerate(task_plan.subtasks):
-
-                if subtask.type == "navigate":
-                    continue
-
-                subtask.uid = f"{args.task}-{subtask.type}-{args.split}-{subtask_type_counters[subtask.type]}-{0}"
-                assert subtask.uid not in subtask_to_subtask_uids_made[subtask.type]
-
-                subtask.composite_subtask_uids = [subtask.uid]
-                assumed_og_subtask = subtask_to_uid_to_subtask_data[subtask.type][
-                    subtask.uid
-                ]
-
-                if isinstance(subtask, CloseSubtask):
-                    assert isinstance(assumed_og_subtask, CloseSubtask)
-                    subtask.remove_obj_id = assumed_og_subtask.remove_obj_id
-
-                if subtask.__dict__ != assumed_og_subtask.__dict__:
-                    import ipdb
-
-                    ipdb.set_trace()
-                assert subtask.__dict__ == assumed_og_subtask.__dict__
-
-                subtask_type_counters[subtask.type] += 1
-                subtask_to_subtask_uids_made[subtask.type].add(subtask.uid)
-
-        for subtask_name in subtask_to_uid_to_subtask_data:
-            assert (
-                set(subtask_to_uid_to_subtask_data[subtask_name])
-                == subtask_to_subtask_uids_made[subtask_name]
-            )
-
-        navigate_task_plans = []
-        for tp_num, task_plan in enumerate(subtask_to_plan_data["sequential"].plans):
-            num_nav_subtasks = 0
-            for subtask_num, subtask in enumerate(task_plan.subtasks):
-                if isinstance(subtask, NavigateSubtask):
-                    last_subtask = task_plan.subtasks[subtask_num - 1]
-                    next_subtask = task_plan.subtasks[subtask_num + 1]
-
-                    navigate_subtask = NavigateSubtask(
-                        connecting_subtask_uids=[last_subtask.uid, next_subtask.uid]
-                    )
-                    navigate_subtask.uid = f"{args.task}-{args.subtask}-{args.split}-{tp_num}-{num_nav_subtasks}"
-                    navigate_subtask.composite_subtask_uids = [navigate_subtask.uid]
-
-                    navigate_task_plans.append(
-                        TaskPlan(
-                            build_config_name=task_plan.build_config_name,
-                            init_config_name=task_plan.init_config_name,
-                            subtasks=[navigate_subtask],
-                        )
-                    )
-                    num_nav_subtasks += 1
-
-        plan_data = PlanData(
-            dataset=subtask_to_plan_data["sequential"].dataset,
-            plans=navigate_task_plans,
-        )
-
-        out_fp = args.root / args.task / args.subtask / args.split / "all.json"
-        os.makedirs(out_fp.parent, exist_ok=True)
-        with open(out_fp, "w+") as f:
-            json.dump(
-                asdict(
-                    plan_data,
-                ),
-                f,
-            )
-
-        return
 
     all_task_plans: List[TaskPlan] = dict(
         pick=gen_pick_task_plans,
         place=gen_place_task_plans,
         open=gen_open_task_plans,
         close=gen_close_task_plans,
+        navigate=gen_navigate_task_plans,
     )[args.subtask](scene_builder)
 
     for tp_num, tp in enumerate(all_task_plans):
@@ -830,34 +803,33 @@ def main():
 
     plan_data_by_targ_id = dict(all=PlanData(dataset=dataset, plans=all_task_plans))
 
-    if args.subtask in ["pick", "place"]:
-        targ_attribute_id = "obj_id"
-    elif args.subtask in ["open", "close"]:
-        targ_attribute_id = "articulation_id"
-    else:
-        raise NotImplementedError(f"{args.subtask} not supported yet")
+    if args.subtask != "navigate":
+        if args.subtask in ["pick", "place"]:
+            targ_attribute_id = "obj_id"
+        elif args.subtask in ["open", "close"]:
+            targ_attribute_id = "articulation_id"
 
-    all_targ_ids = set()
-    for tp in all_task_plans:
-        all_targ_ids.add(tp.subtasks[0].__dict__[targ_attribute_id].split("-")[0])
+        all_targ_ids = set()
+        for tp in all_task_plans:
+            all_targ_ids.add(tp.subtasks[0].__dict__[targ_attribute_id].split("-")[0])
 
-    plan_data_by_targ_id.update(
-        dict(
-            (
-                tid,
-                PlanData(
-                    dataset=dataset,
-                    plans=[
-                        tp
-                        for tp in all_task_plans
-                        if tp.subtasks[0].__dict__[targ_attribute_id].split("-")[0]
-                        == tid
-                    ],
-                ),
+        plan_data_by_targ_id.update(
+            dict(
+                (
+                    tid,
+                    PlanData(
+                        dataset=dataset,
+                        plans=[
+                            tp
+                            for tp in all_task_plans
+                            if tp.subtasks[0].__dict__[targ_attribute_id].split("-")[0]
+                            == tid
+                        ],
+                    ),
+                )
+                for tid in all_targ_ids
             )
-            for tid in all_targ_ids
         )
-    )
 
     for tid, plan_data in plan_data_by_targ_id.items():
         out_fp = args.root / args.task / args.subtask / args.split / f"{tid}.json"

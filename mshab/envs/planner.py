@@ -150,15 +150,17 @@ class PlaceSubtaskConfig(SubtaskConfig):
 class NavigateSubtask(Subtask):
     obj_id: Optional[str] = None
     goal_pos: Optional[PointTuple] = None
-    connecting_subtask_uids: Optional[List[str]] = None
+    prev_goal_pos: Optional[PointTuple] = None
 
     def __post_init__(self):
         self.type = "navigate"
         super().__post_init__()
         if isinstance(self.goal_pos, str):
             self.goal_pos = [float(coord) for coord in self.goal_pos.split(",")]
-        if self.connecting_subtask_uids is not None:
-            assert len(self.connecting_subtask_uids) == 2
+        if isinstance(self.prev_goal_pos, str):
+            self.prev_goal_pos = [
+                float(coord) for coord in self.prev_goal_pos.split(",")
+            ]
 
 
 @dataclass
