@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any, Dict, List
 
 import torch
@@ -10,6 +11,7 @@ from mani_skill.utils.structs.pose import Pose
 from mshab.envs.planner import NavigateSubtask, NavigateSubtaskConfig, TaskPlan
 from mshab.envs.sequential_task import GOAL_POSE_Q
 from mshab.envs.subtask import SubtaskTrainEnv
+from mshab.utils.array import tensor_intersection, tensor_intersection_idx
 
 
 @register_env("NavigateSubtaskTrain-v0", max_episode_steps=200)
@@ -86,6 +88,87 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 dim=1,
             )
 
+    def _apply_premade_spawns(self, env_idx, options: Dict):
+        with torch.device(self.device):
+            current_subtask = self.task_plan[0]
+            batched_spawn_data = defaultdict(list)
+            spawn_selection_idxs = options.get(
+                "spawn_selection_idxs", [None] * env_idx.numel()
+            )
+            for env_num, subtask_uid, spawn_selection_idx in zip(
+                env_idx,
+                [
+                    current_subtask.composite_subtask_uids[env_num]
+                    for env_num in env_idx
+                ],
+                spawn_selection_idxs,
+            ):
+                spawn_data: Dict[str, torch.Tensor] = self.spawn_data[subtask_uid]
+                for k, v in spawn_data.items():
+                    if spawn_selection_idx is None:
+                        spawn_selection_idx = torch.randint(
+                            low=0, high=len(v), size=(1,)
+                        )
+                        self.spawn_selection_idxs[env_num] = spawn_selection_idx.item()
+                    elif isinstance(spawn_selection_idx, int):
+                        self.spawn_selection_idxs[env_num] = spawn_selection_idx
+                        spawn_selection_idx = [spawn_selection_idx]
+                    batched_spawn_data[k].append(v[spawn_selection_idx])
+            for k, v in batched_spawn_data.items():
+                if k == "articulation_qpos":
+                    articulation_qpos = torch.zeros(
+                        (env_idx.numel(), self.subtask_articulations[0].max_dof),
+                        device=self.device,
+                        dtype=torch.float,
+                    )
+                    for i in range(env_idx.numel()):
+                        articulation_qpos[i, : v[i].size(1)] = v[i].squeeze(0)
+                    batched_spawn_data[k] = articulation_qpos
+                else:
+                    batched_spawn_data[k] = torch.cat(v, dim=0)
+            if "robot_pos" in batched_spawn_data:
+                self.agent.robot.set_pose(
+                    Pose.create_from_pq(p=batched_spawn_data["robot_pos"])
+                )
+            if "robot_qpos" in batched_spawn_data:
+                self.agent.robot.set_qpos(batched_spawn_data["robot_qpos"])
+            subtask_obj = self.subtask_objs[0]
+            if subtask_obj is not None:
+                obj_reset_idxs = tensor_intersection_idx(
+                    env_idx, subtask_obj._scene_idxs
+                )
+                if "obj_raw_pose" in batched_spawn_data:
+                    subtask_obj.set_pose(
+                        Pose.create(batched_spawn_data["obj_raw_pose"][obj_reset_idxs])
+                    )
+                if "obj_raw_pose_wrt_tcp" in batched_spawn_data:
+                    if self.gpu_sim_enabled:
+                        self.scene._gpu_apply_all()
+                        self.scene.px.gpu_update_articulation_kinematics()
+                        self.scene._gpu_fetch_all()
+                    subtask_obj.set_pose(
+                        Pose.create(
+                            self.agent.tcp.pose.raw_pose[
+                                tensor_intersection(env_idx, subtask_obj._scene_idxs)
+                            ]
+                        )  # NOTE (arth): use tcp.pose for spawning for slightly better accuracy
+                        * Pose.create(
+                            batched_spawn_data["obj_raw_pose_wrt_tcp"][obj_reset_idxs]
+                        )
+                    )
+            if "articulation_qpos" in batched_spawn_data:
+                self.subtask_articulations[0].set_qpos(
+                    batched_spawn_data["articulation_qpos"]
+                )
+                self.subtask_articulations[0].set_qvel(
+                    self.subtask_articulations[0].qvel[env_idx] * 0
+                )
+                if self.gpu_sim_enabled and len(env_idx) == self.num_envs:
+                    self.scene._gpu_apply_all()
+                    self.scene.px.gpu_update_articulation_kinematics()
+                    self.scene.px.step()
+                    self.scene._gpu_fetch_all()
+
     # NOTE (arth): sometimes will need to nav w/ object, sometimes not
     #       override _merge_navigate_subtasks to allow obj in only some envs
     def _merge_navigate_subtasks(
@@ -106,7 +189,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             merged_obj = Actor.create_from_entities(
                 [
                     self._get_actor_entity(actor_id=f"env-{i}_{oid}", env_num=i)
-                    for i, oid in enumerate(obj_ids)
+                    for i, oid in zip(scene_idxs, obj_ids)
                 ],
                 scene=self.scene,
                 scene_idxs=torch.tensor(scene_idxs, dtype=torch.int),
@@ -127,7 +210,14 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         self.prev_goal_pos_goal.set_pose(
             Pose.create_from_pq(
                 q=GOAL_POSE_Q,
-                p=[subtask.prev_goal_pos for subtask in parallel_subtasks],
+                p=[
+                    (
+                        subtask.prev_goal_pos
+                        if subtask.prev_goal_pos is not None
+                        else [-1, 0, 0.02]
+                    )
+                    for subtask in parallel_subtasks
+                ],
             )
         )
 
@@ -188,7 +278,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 )
 
                 bqvel_rew = torch.tanh(
-                    torch.norm(self.agent.robot.qvel[..., :3], dim=1) / 3
+                    torch.norm(self.agent.robot.qvel[done_moving, :3], dim=1) / 3
                 )
                 reward[done_moving] += 2 * (1 - bqvel_rew)
 

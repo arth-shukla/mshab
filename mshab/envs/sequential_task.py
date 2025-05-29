@@ -1115,9 +1115,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
         elif len(obj._scene_idxs) != self.num_envs:
             is_grasped = torch.zeros_like(env_idx, dtype=torch.bool)
             env_scene_idx = tensor_intersection(env_idx, obj._scene_idxs)
-            is_grasped[env_scene_idx] = self.agent.is_grasping(obj, max_angle=30)[
-                env_scene_idx
-            ]
+            is_grasped[env_scene_idx] = self.agent.is_grasping(obj, max_angle=30)
         else:
             is_grasped = self.agent.is_grasping(obj, max_angle=30)[env_idx]
 
@@ -1395,8 +1393,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
                         env_idx, self.subtask_objs[subtask_num]._scene_idxs
                     )
                     obj_pose_wrt_base[env_scene_idx] = vectorize_pose(
-                        base_pose_inv * self.subtask_objs[subtask_num].pose
-                    )[env_scene_idx]
+                        base_pose_inv[env_scene_idx]
+                        * self.subtask_objs[subtask_num].pose
+                    )
                 else:
                     obj_pose_wrt_base[env_idx] = vectorize_pose(
                         base_pose_inv * self.subtask_objs[subtask_num].pose

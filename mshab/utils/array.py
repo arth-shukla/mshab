@@ -20,6 +20,19 @@ def tensor_intersection(a, b):
     return a_cat_b[torch.where(counts.gt(1))]
 
 
+def tensor_intersection_idx(a, b):
+    """
+    Given sorted ascending tensors a, b without repeated elements, for elements in tensor_intersection(a, b), give their index in a
+
+    Args:
+        a: tensor (1-D), sorted ascending, no repeated values
+        b: tensor (1-D), sorted ascending, no repeated values
+    """
+    insert_pos = torch.searchsorted(a, b)
+    mask = (insert_pos < len(a)) & (a[insert_pos] == b)
+    return insert_pos[mask]
+
+
 def recursive_deepcopy(data):
     if isinstance(data, dict):
         return dict((k, recursive_deepcopy(v)) for k, v in data.items())

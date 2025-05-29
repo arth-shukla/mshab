@@ -988,7 +988,7 @@ def gen_navigate_spawn_data(
             subtask_starting_goal_pose = Pose.create_from_pq(
                 q=GOAL_POSE_Q,
                 p=(
-                    [1, 0, 0.02]
+                    [-1, 0, 0.02]
                     if subtask.prev_goal_pos is None
                     else subtask.prev_goal_pos
                 ),
@@ -1064,7 +1064,7 @@ def gen_navigate_spawn_data(
             )
 
             obj_spawn_success = False
-            if subtask_obj is not None:
+            if subtask_obj is not None and robot_spawn_success:
                 env.reset(
                     seed=args.seed + proc_num,
                     options=dict(

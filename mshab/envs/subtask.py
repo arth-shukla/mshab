@@ -74,9 +74,11 @@ class SubtaskTrainEnv(SequentialTaskEnv):
         return super()._after_reconfigure(options)
 
     def _initialize_episode(self, env_idx, options: Dict):
-        with torch.device(self.device):
-            super()._initialize_episode(env_idx, options)
+        super()._initialize_episode(env_idx, options)
+        self._apply_premade_spawns(env_idx, options)
 
+    def _apply_premade_spawns(self, env_idx, options: Dict):
+        with torch.device(self.device):
             current_subtask = self.task_plan[0]
             batched_spawn_data = defaultdict(list)
             spawn_selection_idxs = options.get(
@@ -124,7 +126,7 @@ class SubtaskTrainEnv(SequentialTaskEnv):
                     Pose.create(batched_spawn_data["obj_raw_pose"])
                 )
             if "obj_raw_pose_wrt_tcp" in batched_spawn_data:
-                if physx.is_gpu_enabled():
+                if self.gpu_sim_enabled:
                     self.scene._gpu_apply_all()
                     self.scene.px.gpu_update_articulation_kinematics()
                     self.scene._gpu_fetch_all()
@@ -141,7 +143,7 @@ class SubtaskTrainEnv(SequentialTaskEnv):
                 self.subtask_articulations[0].set_qvel(
                     self.subtask_articulations[0].qvel[env_idx] * 0
                 )
-                if physx.is_gpu_enabled():
+                if self.gpu_sim_enabled and len(env_idx) == self.num_envs:
                     self.scene._gpu_apply_all()
                     self.scene.px.gpu_update_articulation_kinematics()
                     self.scene.px.step()
