@@ -74,9 +74,10 @@ class PPOConfig:
     save_backup_ckpts: bool = False
     """whether to save separate ckpts eace save_freq which are not overwritten"""
 
-    # passed from env/eval_env cfg
-    num_steps: int = field(init=False)
+    num_steps: Optional[int] = None
     """the number of steps to run in each environment per policy rollout"""
+
+    # passed from env/eval_env cfg
     num_envs: int = field(init=False)
     """the number of parallel environments"""
     num_eval_envs: int = field(init=False)
@@ -144,7 +145,8 @@ class TrainConfig:
 
         self.algo.num_eval_envs = self.eval_env.num_envs
         self.algo.num_envs = self.env.num_envs
-        self.algo.num_steps = self.env.max_episode_steps
+        if self.algo.num_steps is None:
+            self.algo.num_steps = self.env.max_episode_steps
         self.algo._additional_processing()
 
         self.logger.exp_cfg = asdict(self)

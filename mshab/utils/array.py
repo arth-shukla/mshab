@@ -28,7 +28,7 @@ def tensor_intersection_idx(a, b):
         a: tensor (1-D), sorted ascending, no repeated values
         b: tensor (1-D), sorted ascending, no repeated values
     """
-    insert_pos = torch.searchsorted(a, b)
+    insert_pos = torch.clamp(torch.searchsorted(a, b), max=len(a) - 1)
     mask = (insert_pos < len(a)) & (a[insert_pos] == b)
     return insert_pos[mask]
 

@@ -203,7 +203,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         self.subtask_goals[-1].set_pose(
             Pose.create_from_pq(
                 q=GOAL_POSE_Q,
-                p=[subtask.goal_pos for subtask in parallel_subtasks],
+                p=[parallel_subtasks[env_num].goal_pos for env_num in env_idx],
             )
         )
         self.prev_goal_pos_goal.set_pose(
@@ -211,11 +211,11 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 q=GOAL_POSE_Q,
                 p=[
                     (
-                        subtask.prev_goal_pos
-                        if subtask.prev_goal_pos is not None
+                        parallel_subtasks[env_num].prev_goal_pos
+                        if parallel_subtasks[env_num].prev_goal_pos is not None
                         else [-1, 0, 0.02]
                     )
-                    for subtask in parallel_subtasks
+                    for env_num in env_idx
                 ],
             )
         )
@@ -320,8 +320,8 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 still_navigating &= begin_navigating
 
                 # nav / done nav
-                reward[done_navigating] += 12
-                navigating_rew = 10 * (
+                reward[done_navigating] += 8
+                navigating_rew = 6 * (
                     torch.tanh(
                         40
                         * torch.clamp(
@@ -336,10 +336,11 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 reward[still_navigating] += navigating_rew
 
                 # stop moving base when done
-                bqvel_rew = 1 - torch.tanh(
-                    torch.norm(self.agent.robot.qvel[done_moving, :3], dim=1) / 3
-                )
-                reward[done_moving] += bqvel_rew
+                bqvel = torch.norm(self.agent.robot.qvel[..., :3], dim=1)
+                still_navigating_vel_rew = 2 * (torch.tanh(bqvel[still_navigating] / 3))
+                done_moving_vel_rew = 2 * (1 - torch.tanh(bqvel[done_moving] / 3))
+                reward[still_navigating] += still_navigating_vel_rew
+                reward[done_moving] += done_moving_vel_rew
 
                 # robot rest when done moving and ee at goal pos
                 qvel = self.agent.robot.qvel[done_moving & info["ee_rest"], :-2]
@@ -353,15 +354,19 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 info["navigating_rew"] = x.clone()
 
                 x = torch.zeros_like(reward)
-                x[done_moving] = bqvel_rew
-                info["bqvel_rew"] = x.clone()
+                x[still_navigating] = still_navigating_vel_rew
+                info["still_moving_vel_rew"] = x.clone()
+
+                x = torch.zeros_like(reward)
+                x[done_moving] = done_moving_vel_rew
+                info["done_moving_vel_rew"] = x.clone()
 
                 x = torch.zeros_like(reward)
                 x[done_moving & info["ee_rest"]] = static_rew
                 info["static_rew"] = x.clone()
 
             # collisions
-            step_no_col_rew = 5 * (
+            step_no_col_rew = 8 * (
                 1
                 - torch.tanh(
                     3
@@ -381,7 +386,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 self.agent.robot.qpos[..., 3:-2] - self.resting_qpos,
                 dim=1,
             )
-            arm_resting_orientation_rew = 2 * (1 - torch.tanh(arm_to_resting_diff / 5))
+            arm_resting_orientation_rew = 4 * (1 - torch.tanh(arm_to_resting_diff / 5))
             reward += arm_resting_orientation_rew
 
             # enforce ee at rest
@@ -405,7 +410,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        max_reward = 25.0
+        max_reward = 29.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     # -------------------------------------------------------------------------------------------------
