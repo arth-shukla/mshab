@@ -34,7 +34,12 @@ from mshab.envs.planner import (
     SubtaskConfig,
     TaskPlan,
 )
-from mshab.utils.array import all_equal, all_same_type, tensor_intersection
+from mshab.utils.array import (
+    all_equal,
+    all_same_type,
+    tensor_intersection,
+    tensor_intersection_idx,
+)
 
 
 UNIQUE_SUCCESS_SUBTASK_TYPE = 100
@@ -1113,9 +1118,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
         if obj is None:
             is_grasped = torch.zeros_like(env_idx, dtype=torch.bool)
         elif len(obj._scene_idxs) != self.num_envs:
-            is_grasped = torch.zeros_like(env_idx, dtype=torch.bool)
-            env_scene_idx = tensor_intersection(env_idx, obj._scene_idxs)
-            is_grasped[env_scene_idx] = self.agent.is_grasping(obj, max_angle=30)
+            # NOTE (arth): this is so nav subtask train env can handle grasping when obj
+            #   is only in some parallel envs -- not the cleanest implementation
+            is_grasped = self._is_grasping_partial_env_obj(obj, env_idx, max_angle=30)
         else:
             is_grasped = self.agent.is_grasping(obj, max_angle=30)[env_idx]
 
@@ -1184,7 +1189,12 @@ class SequentialTaskEnv(SceneManipulationEnv):
         )
         if obj is not None:
             if len(obj._scene_idxs) != self.num_envs:
-                navigate_success[env_scene_idx] &= is_grasped[env_scene_idx]
+                subtask_envs_with_obj = tensor_intersection_idx(
+                    env_idx, obj._scene_idxs
+                )
+                navigate_success[subtask_envs_with_obj] &= is_grasped[
+                    subtask_envs_with_obj
+                ]
             else:
                 navigate_success &= is_grasped
         return (

@@ -6,6 +6,7 @@ import torch
 from mani_skill.utils import common
 from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs import Actor
+from mani_skill.utils.structs.link import Link
 from mani_skill.utils.structs.pose import Pose
 
 from mshab.envs.planner import NavigateSubtask, NavigateSubtaskConfig, TaskPlan
@@ -73,7 +74,6 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     def _after_reconfigure(self, options):
         with torch.device(self.device):
             super()._after_reconfigure(options)
-            self.starting_qpos = torch.zeros_like(self.agent.robot.qpos)
             self.last_distance_from_goal = torch.full(
                 (self.num_envs,), -1, dtype=torch.float
             )
@@ -81,9 +81,8 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     def _initialize_episode(self, env_idx, options):
         with torch.device(self.device):
             super()._initialize_episode(env_idx, options)
-            self.starting_qpos[env_idx] = self.agent.robot.qpos[env_idx]
             self.last_distance_from_goal[env_idx] = torch.norm(
-                self.agent.robot.pose.p[env_idx, :2]
+                self.agent.base_link.pose.p[env_idx, :2]
                 - self.subtask_goals[0].pose.p[env_idx, :2],
                 dim=1,
             )
@@ -230,16 +229,64 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             )
         )
 
+        self.agent_finger1_link = Link.create(
+            [self.agent.finger1_link._objs[i] for i in scene_idxs],
+            self.scene,
+            scene_idxs,
+        )
+        self.agent_finger1_link.name = "agent_finger1_link_for_grasp"
+        self.agent_finger2_link = Link.create(
+            [self.agent.finger2_link._objs[i] for i in scene_idxs],
+            self.scene,
+            scene_idxs,
+        )
+        self.agent_finger2_link.name = "agent_finger2_link_for_grasp"
+
     # -------------------------------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------------------------------
     # REWARD
     # -------------------------------------------------------------------------------------------------
 
+    def _is_grasping_partial_env_obj(
+        self, obj: Actor, env_idx, min_force=0.5, max_angle=85
+    ):
+        with torch.device(self.device):
+            is_grasped = torch.zeros(self.num_envs, dtype=torch.bool)
+
+            l_contact_forces = self.scene.get_pairwise_contact_forces(
+                self.agent_finger1_link, obj
+            )
+            r_contact_forces = self.scene.get_pairwise_contact_forces(
+                self.agent_finger2_link, obj
+            )
+            lforce = torch.linalg.norm(l_contact_forces, axis=1)
+            rforce = torch.linalg.norm(r_contact_forces, axis=1)
+
+            # direction to open the gripper
+            ldirection = -self.agent_finger1_link.pose.to_transformation_matrix()[
+                ..., :3, 1
+            ]
+            rdirection = self.agent_finger2_link.pose.to_transformation_matrix()[
+                ..., :3, 1
+            ]
+            langle = common.compute_angle_between(ldirection, l_contact_forces)
+            rangle = common.compute_angle_between(rdirection, r_contact_forces)
+            lflag = torch.logical_and(
+                lforce >= min_force, torch.rad2deg(langle) <= max_angle
+            )
+            rflag = torch.logical_and(
+                rforce >= min_force, torch.rad2deg(rangle) <= max_angle
+            )
+
+            is_grasped[obj._scene_idxs] = torch.logical_and(lflag, rflag)
+            return is_grasped[env_idx]
+
     def evaluate(self):
         info = super().evaluate()
         info["distance_from_goal"] = torch.norm(
-            self.agent.robot.pose.p[..., :2] - self.subtask_goals[0].pose.p[..., :2],
+            self.agent.base_link.pose.p[..., :2]
+            - self.subtask_goals[0].pose.p[..., :2],
             dim=1,
         )
         return info
@@ -256,9 +303,12 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                     should_grasp = torch.zeros(self.num_envs, dtype=torch.bool)
                     should_grasp[obj._scene_idxs] = True
                     begin_navigating[should_grasp & ~info["is_grasped"]] = False
+                    info["should_grasp"] = should_grasp
                 else:
                     begin_navigating[~info["is_grasped"]] = False
-            reward += 2 * begin_navigating
+            begin_navigating_rew = 2 * begin_navigating
+            reward += begin_navigating_rew
+            info["begin_navigating_rew"] = 2 * begin_navigating
 
             if torch.any(begin_navigating):
                 done_moving = info["oriented_correctly"] & info["navigated_close"]
@@ -269,18 +319,46 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 done_navigating &= begin_navigating
                 still_navigating &= begin_navigating
 
+                # nav / done nav
                 reward[done_navigating] += 12
-                reward[still_navigating] += 10 * torch.tanh(
-                    torch.abs(
-                        self.last_distance_from_goal[still_navigating]
-                        - info["distance_from_goal"][still_navigating]
+                navigating_rew = 10 * (
+                    torch.tanh(
+                        40
+                        * torch.clamp(
+                            (
+                                self.last_distance_from_goal[still_navigating]
+                                - info["distance_from_goal"][still_navigating]
+                            ),
+                            min=0,
+                        )
                     )
                 )
+                reward[still_navigating] += navigating_rew
 
-                bqvel_rew = torch.tanh(
+                # stop moving base when done
+                bqvel_rew = 1 - torch.tanh(
                     torch.norm(self.agent.robot.qvel[done_moving, :3], dim=1) / 3
                 )
-                reward[done_moving] += 2 * (1 - bqvel_rew)
+                reward[done_moving] += bqvel_rew
+
+                # robot rest when done moving and ee at goal pos
+                qvel = self.agent.robot.qvel[done_moving & info["ee_rest"], :-2]
+                static_rew = 1 - torch.tanh(torch.norm(qvel, dim=1))
+                reward[done_moving & info["ee_rest"]] += static_rew
+
+                #
+
+                x = torch.zeros_like(reward)
+                x[still_navigating] = navigating_rew
+                info["navigating_rew"] = x.clone()
+
+                x = torch.zeros_like(reward)
+                x[done_moving] = bqvel_rew
+                info["bqvel_rew"] = x.clone()
+
+                x = torch.zeros_like(reward)
+                x[done_moving & info["ee_rest"]] = static_rew
+                info["static_rew"] = x.clone()
 
             # collisions
             step_no_col_rew = 5 * (
@@ -298,13 +376,26 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             )
             reward += step_no_col_rew
 
-            # enforce arm in similar position as at start of episode
+            # encourage arm and torso in "resting" orientation
             arm_to_resting_diff = torch.norm(
-                self.agent.robot.qpos[..., 3:] - self.starting_qpos[..., 3:],
+                self.agent.robot.qpos[..., 3:-2] - self.resting_qpos,
                 dim=1,
             )
-            arm_resting_orientation_rew = 3 * (1 - torch.tanh(arm_to_resting_diff / 5))
+            arm_resting_orientation_rew = 2 * (1 - torch.tanh(arm_to_resting_diff / 5))
             reward += arm_resting_orientation_rew
+
+            # enforce ee at rest
+            ee_to_rest_dist = torch.norm(
+                self.agent.tcp_pose.p - self.ee_rest_world_pose.p, dim=1
+            )
+            ee_rest_rew = 2 * (1 - torch.tanh(3 * ee_to_rest_dist))
+            reward += ee_rest_rew
+
+            #
+
+            info["step_no_col_rew"] = step_no_col_rew
+            info["arm_resting_orientation_rew"] = arm_resting_orientation_rew
+            info["ee_rest_rew"] = ee_rest_rew
 
             # set for next step
             self.last_distance_from_goal = info["distance_from_goal"]
@@ -314,7 +405,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        max_reward = 24.0
+        max_reward = 25.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     # -------------------------------------------------------------------------------------------------
