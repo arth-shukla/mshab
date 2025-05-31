@@ -122,12 +122,16 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             ]
             max_map_verts = max([x.size(0) for x in floor_map_verts])
             self.floor_map_verts = torch.full(
-                (len(build_configs), max_map_verts, 2), 100, device=self.device
+                (len(build_configs), max_map_verts, 2),
+                100,
+                device=self.device,
+                dtype=torch.float,
             )
             self.floor_map_all_pairs_dists = torch.full(
                 (len(build_configs), max_map_verts, max_map_verts),
                 100,
                 device=self.device,
+                dtype=torch.float,
             )
             for i in range(len(build_configs)):
                 verts = floor_map_verts[i]
@@ -320,7 +324,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
 
     def _compute_distance(self, env_idx=None):
         if env_idx is None:
-            env_idx = slice(self.num_envs)
+            env_idx = torch.arange(self.num_envs, device=self.device)
         if self.use_geodesic:
             return self._compute_geodesic_disance(env_idx)
         else:
@@ -428,21 +432,21 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
 
                 #
 
-                x = torch.zeros_like(reward)
-                x[still_navigating] = navigating_rew
-                info["navigating_rew"] = x.clone()
+                # x = torch.zeros_like(reward)
+                # x[still_navigating] = navigating_rew
+                # info["navigating_rew"] = x.clone()
 
-                x = torch.zeros_like(reward)
-                x[still_navigating] = still_navigating_vel_rew
-                info["still_moving_vel_rew"] = x.clone()
+                # x = torch.zeros_like(reward)
+                # x[still_navigating] = still_navigating_vel_rew
+                # info["still_moving_vel_rew"] = x.clone()
 
-                x = torch.zeros_like(reward)
-                x[done_moving] = done_moving_vel_rew
-                info["done_moving_vel_rew"] = x.clone()
+                # x = torch.zeros_like(reward)
+                # x[done_moving] = done_moving_vel_rew
+                # info["done_moving_vel_rew"] = x.clone()
 
-                x = torch.zeros_like(reward)
-                x[done_moving & info["ee_rest"]] = static_rew
-                info["static_rew"] = x.clone()
+                # x = torch.zeros_like(reward)
+                # x[done_moving & info["ee_rest"]] = static_rew
+                # info["static_rew"] = x.clone()
 
             # collisions
             step_no_col_rew = 8 * (
@@ -470,9 +474,9 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
 
             #
 
-            info["step_no_col_rew"] = step_no_col_rew
-            info["arm_resting_orientation_rew"] = arm_resting_orientation_rew
-            info["ee_rest_rew"] = ee_rest_rew
+            # info["step_no_col_rew"] = step_no_col_rew
+            # info["arm_resting_orientation_rew"] = arm_resting_orientation_rew
+            # info["ee_rest_rew"] = ee_rest_rew
 
         return reward
 
