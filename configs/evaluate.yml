@@ -29,9 +29,9 @@ eval_env:
   env_kwargs:
     require_build_configs_repeated_equally_across_envs: False
     add_event_tracker_info: True
-    task_cfgs:
-      navigate:
-        ignore_arm_checkers: True
+    # task_cfgs:
+    #   navigate:
+    #     ignore_arm_checkers: True
 
 logger:
   workspace: mshab_exps

@@ -1,9 +1,18 @@
 from collections import defaultdict
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any, Dict, List, Literal
 
+import trimesh
+
+import numpy as np
 import torch
 
+from mani_skill import ASSET_DIR
 from mani_skill.utils import common
+from mani_skill.utils.geometry.rotation_conversions import (
+    quaternion_apply,
+    quaternion_invert,
+)
 from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs import Actor
 from mani_skill.utils.structs.link import Link
@@ -42,6 +51,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         *args,
         robot_uids="fetch",
         task_plans: List[TaskPlan] = [],
+        dist_fn: Literal["euclidean", "geodesic"] = "geodesic",
         **kwargs,
     ):
 
@@ -51,6 +61,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         ), f"Task plans for {self.__class__.__name__} must be one {NavigateSubtask.__name__} long"
 
         self.subtask_cfg = self.navigate_cfg
+        self.use_geodesic = dist_fn == "geodesic"
 
         super().__init__(*args, robot_uids=robot_uids, task_plans=task_plans, **kwargs)
 
@@ -71,21 +82,60 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             radius=0.15, name="prev_goal_0", goal_type="sphere", color=[1, 0, 0, 1]
         )
 
-    def _after_reconfigure(self, options):
-        with torch.device(self.device):
-            super()._after_reconfigure(options)
-            self.last_distance_from_goal = torch.full(
-                (self.num_envs,), -1, dtype=torch.float
-            )
+        if self.use_geodesic:
+            bcis = common.to_tensor(self.build_config_idxs, device=self.device)
+            unique_bcis = bcis.unique()
+            build_configs = [
+                self.scene_builder.build_configs[bci] for bci in unique_bcis
+            ]
+            self.env_idx_to_floor_map = torch.searchsorted(unique_bcis, bcis)
 
-    def _initialize_episode(self, env_idx, options):
-        with torch.device(self.device):
-            super()._initialize_episode(env_idx, options)
-            self.last_distance_from_goal[env_idx] = torch.norm(
-                self.agent.base_link.pose.p[env_idx, :2]
-                - self.subtask_goals[0].pose.p[env_idx, :2],
-                dim=1,
+            # NOTE (arth): we precompute navigable floor amps and all-pairs distances
+            #   to efficiently compute (approx) geodesic distances at runtime
+            floor_map_verts = [
+                common.to_tensor(
+                    trimesh.load(
+                        Path(ASSET_DIR)
+                        / "scene_datasets/replica_cad_dataset/configs/scenes"
+                        / (
+                            Path(bc).stem
+                            + f".{str(self.robot_uids)}.navigable_positions_simplified.obj"
+                        )
+                    ).vertices,
+                    device=self.device,
+                )
+                for bc in build_configs
+            ]
+            floor_map_all_pairs_dists = [
+                common.to_tensor(
+                    np.load(
+                        Path(ASSET_DIR)
+                        / "scene_datasets/replica_cad_dataset/configs/scenes"
+                        / (
+                            Path(bc).stem
+                            + f".{str(self.robot_uids)}.navigable_positions_simplified_all_pairs_dist.npy"
+                        )
+                    ),
+                    device=self.device,
+                )
+                for bc in build_configs
+            ]
+            max_map_verts = max([x.size(0) for x in floor_map_verts])
+            self.floor_map_verts = torch.full(
+                (len(build_configs), max_map_verts, 2), 100, device=self.device
             )
+            self.floor_map_all_pairs_dists = torch.full(
+                (len(build_configs), max_map_verts, max_map_verts),
+                100,
+                device=self.device,
+            )
+            for i in range(len(build_configs)):
+                verts = floor_map_verts[i]
+                dists = floor_map_all_pairs_dists[i]
+                self.floor_map_verts[i, : verts.size(0)] = verts
+                self.floor_map_all_pairs_dists[i, : dists.size(0), : dists.size(1)] = (
+                    dists
+                )
 
     def _apply_premade_spawns(self, env_idx, options: Dict):
         with torch.device(self.device):
@@ -248,6 +298,38 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     # REWARD
     # -------------------------------------------------------------------------------------------------
 
+    def _compute_geodesic_disance(self, env_idx):
+        agent_pos = self.agent.base_link.pose.p[env_idx, :2]
+        goal_pos = self.subtask_goals[-1].pose.p[env_idx, :2]
+
+        verts = self.floor_map_verts[self.env_idx_to_floor_map[env_idx]]
+        dists = self.floor_map_all_pairs_dists[self.env_idx_to_floor_map[env_idx]]
+
+        _, a_closest_vert = torch.min(
+            torch.norm(agent_pos.unsqueeze(1) - verts, dim=2), dim=1
+        )
+        g_dist_to_vert, g_closest_vert = torch.min(
+            torch.norm(goal_pos.unsqueeze(1) - verts, dim=2), dim=1
+        )
+        a_vert_to_g_vert_dist = dists[
+            torch.arange(len(dists)), a_closest_vert, g_closest_vert
+        ]
+
+        # NOTE (arth): omit a_dist_to_vert since mesh has some gaps between vertices which agent might end up in
+        return a_vert_to_g_vert_dist + g_dist_to_vert
+
+    def _compute_distance(self, env_idx=None):
+        if env_idx is None:
+            env_idx = slice(self.num_envs)
+        if self.use_geodesic:
+            return self._compute_geodesic_disance(env_idx)
+        else:
+            return torch.norm(
+                self.agent.base_link.pose.p[env_idx, :2]
+                - self.subtask_goals[0].pose.p[env_idx, :2],
+                dim=1,
+            )
+
     def _is_grasping_partial_env_obj(
         self, obj: Actor, env_idx, min_force=0.5, max_angle=85
     ):
@@ -284,11 +366,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
 
     def evaluate(self):
         info = super().evaluate()
-        info["distance_from_goal"] = torch.norm(
-            self.agent.base_link.pose.p[..., :2]
-            - self.subtask_goals[0].pose.p[..., :2],
-            dim=1,
-        )
+        info["distance_from_goal"] = self._compute_distance()
         return info
 
     def compute_dense_reward(self, obs: Any, action: torch.Tensor, info: Dict):
@@ -319,27 +397,28 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 done_navigating &= begin_navigating
                 still_navigating &= begin_navigating
 
-                # nav / done nav
-                reward[done_navigating] += 8
+                # nav dist reward
                 navigating_rew = 6 * (
-                    torch.tanh(
-                        40
-                        * torch.clamp(
-                            (
-                                self.last_distance_from_goal[still_navigating]
-                                - info["distance_from_goal"][still_navigating]
-                            ),
-                            min=0,
-                        )
-                    )
+                    1 - torch.tanh(info["distance_from_goal"][still_navigating] / 10)
                 )
                 reward[still_navigating] += navigating_rew
 
-                # stop moving base when done
-                bqvel = torch.norm(self.agent.robot.qvel[..., :3], dim=1)
-                still_navigating_vel_rew = 2 * (torch.tanh(bqvel[still_navigating] / 3))
-                done_moving_vel_rew = 2 * (1 - torch.tanh(bqvel[done_moving] / 3))
+                # move forward when not done
+                ego_base_lin_vel = quaternion_apply(
+                    quaternion_invert(self.agent.base_link.pose.q[still_navigating]),
+                    self.agent.base_link.linear_velocity[still_navigating],
+                )
+                still_navigating_vel_rew = 2 * torch.tanh(
+                    2 * ego_base_lin_vel[:, 0].clip(min=0)
+                )
                 reward[still_navigating] += still_navigating_vel_rew
+
+                # when done nav, give full from still_nav + 2
+                reward[done_navigating] += 10
+
+                # stop moving base when done
+                bqvel = torch.norm(self.agent.robot.qvel[done_moving, :3], dim=1)
+                done_moving_vel_rew = 2 * (1 - torch.tanh(bqvel / 3))
                 reward[done_moving] += done_moving_vel_rew
 
                 # robot rest when done moving and ee at goal pos
@@ -369,14 +448,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             step_no_col_rew = 8 * (
                 1
                 - torch.tanh(
-                    3
-                    * (
-                        torch.clamp(
-                            self.robot_force_mult * info["robot_force"],
-                            min=self.robot_force_penalty_min,
-                        )
-                        - self.robot_force_penalty_min
-                    )
+                    3 * (torch.clamp(0.005 * info["robot_force"], min=0.2) - 0.2)
                 )
             )
             reward += step_no_col_rew
@@ -401,9 +473,6 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             info["step_no_col_rew"] = step_no_col_rew
             info["arm_resting_orientation_rew"] = arm_resting_orientation_rew
             info["ee_rest_rew"] = ee_rest_rew
-
-            # set for next step
-            self.last_distance_from_goal = info["distance_from_goal"]
 
         return reward
 

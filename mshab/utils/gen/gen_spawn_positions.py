@@ -998,9 +998,11 @@ def gen_navigate_spawn_data(
             positions_wrt_centers = navigable_positions - starting_goal_center
             dists = torch.norm(positions_wrt_centers, dim=-1)
 
-            new_navigable_positions = navigable_positions[dists < args.spawn_loc_radius]
-            positions_wrt_centers = positions_wrt_centers[dists < args.spawn_loc_radius]
-            dists = dists[dists < args.spawn_loc_radius]
+            # NOTE (arth): for nav, we spawn all over the apartment
+            new_navigable_positions = navigable_positions
+            # new_navigable_positions = navigable_positions[dists < args.spawn_loc_radius]
+            # positions_wrt_centers = positions_wrt_centers[dists < args.spawn_loc_radius]
+            # dists = dists[dists < args.spawn_loc_radius]
             rots = (
                 torch.sign(positions_wrt_centers[..., 1])
                 * torch.arccos(positions_wrt_centers[..., 0] / dists)
@@ -1023,7 +1025,7 @@ def gen_navigate_spawn_data(
             env.agent.robot.set_pose(Pose.create_from_pq(p=robot_pos))
 
             # base rot
-            rot = rots[spawn_num]
+            rot = torch.rand_like(rots[spawn_num]) * 2 * torch.pi
             qpos[:, 2] = rot
             qpos[:, 2:3] += torch.clamp(
                 torch.normal(0, 0.25, qpos[:, 2:3].shape), -0.5, 0.5

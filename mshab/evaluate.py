@@ -16,15 +16,10 @@ import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
 
-import sapien
-import sapien.physx as physx
-
 # ManiSkill specific imports
 import mani_skill.envs
 from mani_skill import ASSET_DIR
 from mani_skill.utils import common
-from mani_skill.utils.structs.actor import Actor
-from mani_skill.utils.structs.pose import Pose, to_sapien_pose
 
 from mshab.agents.bc import Agent as BCAgent
 from mshab.agents.dp import Agent as DPAgent
@@ -32,8 +27,7 @@ from mshab.agents.ppo import Agent as PPOAgent
 from mshab.agents.sac import Agent as SACAgent
 from mshab.envs.make import EnvConfig, make_env
 from mshab.envs.planner import CloseSubtask, OpenSubtask, PickSubtask, PlaceSubtask
-from mshab.envs.wrappers.record import RecordEpisode
-from mshab.utils.array import recursive_deepcopy, recursive_slice, to_tensor
+from mshab.utils.array import recursive_slice, to_tensor
 from mshab.utils.config import parse_cfg
 from mshab.utils.logger import Logger, LoggerConfig
 from mshab.utils.time import NonOverlappingTimeProfiler
@@ -359,6 +353,14 @@ def eval(cfg: EvalConfig):
                 / "policy.pt"
             )
             policies[subtask_name][targ_name] = get_policy_act_fn(cfg_path, ckpt_path)
+    policies["navigate"] = dict()
+    _nav_p_dir = Path(
+        "mshab_exps/NavigateSubtaskTrain-v0/tidy_house-rcad-ppo-navigate/ppo-navigate-all-local"
+    )
+    policies["navigate"]["all"] = get_policy_act_fn(
+        _nav_p_dir / "config.yml",
+        _nav_p_dir / "models/latest.pt",
+    )
 
     def act(obs):
         with torch.no_grad():
@@ -375,492 +377,10 @@ def eval(cfg: EvalConfig):
                 ]
                 subtask_type = get_subtask_type()
 
-                # if navigate, teleport robot to appropriate location w/ added base xy/rot noise
-                # also, set subtask_type for nav envs to next so appropriate policy queried
-                navigate_env_idx = subtask_type == 2
-                if torch.any(navigate_env_idx):
-                    ori_state_dict = recursive_deepcopy(uenv.get_state_dict())
-                    ori_robot_raw_pose = uenv.agent.robot.pose.raw_pose.clone()
-                    ori_robot_qpos = uenv.agent.robot.qpos.clone()
-                    ori_robot_qvel = uenv.agent.robot.qvel.clone()
-                    ori_subtask_obj_raw_poses = [
-                        (None if so is None else so.pose.raw_pose.clone())
-                        for so in uenv.subtask_objs
-                    ]
-                    ori_subtask_obj_raw_poses_wrt_tcp = [
-                        (
-                            None
-                            if so is None
-                            else (uenv.agent.tcp.pose.inv() * so.pose).raw_pose.clone()
-                        )
-                        for so in uenv.subtask_objs
-                    ]
-                    ori_subtask_obj_linear_velocities = [
-                        (None if so is None else so.linear_velocity.clone())
-                        for so in uenv.subtask_objs
-                    ]
-                    ori_subtask_obj_angular_velocities = [
-                        (None if so is None else so.angular_velocity.clone())
-                        for so in uenv.subtask_objs
-                    ]
-
-                    curr_robot_raw_pose = ori_robot_raw_pose.clone()
-                    curr_robot_qpos = ori_robot_qpos.clone()
-                    curr_robot_qvel = ori_robot_qvel.clone()
-                    curr_subtask_obj_raw_poses = recursive_deepcopy(
-                        ori_subtask_obj_raw_poses
-                    )
-                    curr_subtask_obj_raw_poses_wrt_tcp = recursive_deepcopy(
-                        ori_subtask_obj_raw_poses_wrt_tcp
-                    )
-                    curr_subtask_obj_linear_velocities = recursive_deepcopy(
-                        ori_subtask_obj_linear_velocities
-                    )
-                    curr_subtask_obj_angular_velocities = recursive_deepcopy(
-                        ori_subtask_obj_angular_velocities
-                    )
-
-                    currently_running_nav_subtasks: torch.Tensor = torch.unique(
-                        torch.clip(
-                            uenv.subtask_pointer[navigate_env_idx],
-                            max=len(uenv.task_plan) - 1,
-                        )
-                    )
-                    for subtask_num in currently_running_nav_subtasks:
-                        next_subtask_num = min(subtask_num + 1, len(uenv.task_plan) - 1)
-                        _next_subtask_type = uenv.task_ids[next_subtask_num]
-                        _subtask_obj: Actor = uenv.subtask_objs[subtask_num]
-                        if _subtask_obj is not None:
-                            _subtask_obj_raw_pose = curr_subtask_obj_raw_poses[
-                                subtask_num
-                            ].clone()
-                            _subtask_obj_raw_pose_wrt_tcp = (
-                                curr_subtask_obj_raw_poses_wrt_tcp[subtask_num].clone()
-                            )
-                            _subtask_obj_linear_velocity = (
-                                curr_subtask_obj_linear_velocities[subtask_num].clone()
-                            )
-                            _subtask_obj_angular_velocity = (
-                                curr_subtask_obj_angular_velocities[subtask_num].clone()
-                            )
-
-                        subtask_envs = torch.where(uenv.subtask_pointer == subtask_num)[
-                            0
-                        ]
-                        navigable_positions_list = []
-                        for subtask_env_num in subtask_envs:
-                            env_navigable_positions = torch.from_numpy(
-                                np.array(
-                                    uenv.scene_builder.navigable_positions[
-                                        subtask_env_num
-                                    ].vertices
-                                )
-                            ).to(device)
-                            next_subtask_articulation = uenv.subtask_articulations[
-                                next_subtask_num
-                            ]
-                            if (
-                                (_next_subtask_type == 3 or _next_subtask_type == 4)
-                                and next_subtask_articulation is not None
-                                and (
-                                    "kitchen_counter"
-                                    not in next_subtask_articulation._objs[0].name
-                                    or next_subtask_articulation.links is not None
-                                )
-                            ):
-                                # NOTE (arth): this first case covers prepare_groceries picking from fridge
-                                if "fridge" in next_subtask_articulation._objs[0].name:
-                                    next_subtask_articulation_rel_spawn_pose = (
-                                        to_sapien_pose(
-                                            Pose.create(
-                                                next_subtask_articulation.pose.raw_pose[
-                                                    subtask_env_num
-                                                ]
-                                            )
-                                        )
-                                    )
-                                    xmin = 0.933
-                                    xmax = 1.833
-                                    ymin = -0.6
-                                    ymax = 0.6
-                                elif (
-                                    "kitchen_counter"
-                                    in next_subtask_articulation._objs[0].name
-                                ):
-                                    next_subtask_articulation_rel_spawn_pose = (
-                                        to_sapien_pose(
-                                            Pose.create(
-                                                next_subtask_articulation.links[
-                                                    7
-                                                ].pose.raw_pose[subtask_env_num]
-                                            )
-                                        )
-                                    )
-                                    xmin = 0.3
-                                    xmax = 1.5
-                                    ymin = -0.6
-                                    ymax = 0.6
-                                else:
-                                    raise NotImplementedError(
-                                        f"{next_subtask_articulation._objs[0].name} unknown"
-                                    )
-
-                                xmin = (
-                                    next_subtask_articulation_rel_spawn_pose
-                                    * sapien.Pose(p=[xmin, 0, 0])
-                                ).p[0]
-                                xmax = (
-                                    next_subtask_articulation_rel_spawn_pose
-                                    * sapien.Pose(p=[xmax, 0, 0])
-                                ).p[0]
-                                ymin = (
-                                    next_subtask_articulation_rel_spawn_pose
-                                    * sapien.Pose(p=[0, 0, ymin])
-                                ).p[1]
-                                ymax = (
-                                    next_subtask_articulation_rel_spawn_pose
-                                    * sapien.Pose(p=[0, 0, ymax])
-                                ).p[1]
-
-                                if xmin > xmax:
-                                    xmin, xmax = (xmax, xmin)
-                                if ymin > ymax:
-                                    ymin, ymax = (ymax, ymin)
-                                criterion = (
-                                    (xmin <= env_navigable_positions[:, 0])
-                                    & (env_navigable_positions[:, 0] <= xmax)
-                                    & (ymin <= env_navigable_positions[:, 1])
-                                    & (env_navigable_positions[:, 1] <= ymax)
-                                )
-                            else:
-                                positions_wrt_center = (
-                                    env_navigable_positions
-                                    - uenv.subtask_goals[subtask_num].pose.p[
-                                        subtask_env_num, :2
-                                    ]
-                                )
-                                dists = torch.norm(positions_wrt_center, dim=-1)
-                                criterion = dists < SPAWN_LOC_RADIUS
-                            env_navigable_positions = env_navigable_positions[criterion]
-                            navigable_positions_list.append(env_navigable_positions)
-                        num_navigable_positions = torch.tensor(
-                            [len(x) for x in navigable_positions_list]
-                        )
-                        navigable_positions = pad_sequence(
-                            navigable_positions_list,
-                            batch_first=True,
-                            padding_value=0,
-                        ).float()
-
-                        subtask_env_has_invalid_spawn = torch.ones(
-                            len(subtask_envs), dtype=torch.bool
-                        )
-                        for _ in range(MAX_SPAWN_ATTEMPTS):
-                            if not torch.any(subtask_env_has_invalid_spawn):
-                                break
-                            subtask_envs_with_invalid_spawns = subtask_envs[
-                                subtask_env_has_invalid_spawn
-                            ]
-
-                            new_state_dict = recursive_deepcopy(ori_state_dict)
-
-                            ##########################################
-                            # Get spawn rot and pos
-                            ##########################################
-                            uenv.set_state_dict(new_state_dict)
-
-                            if _subtask_obj is not None:
-                                _subtask_obj.set_pose(sapien.Pose(p=[999, 999, 999]))
-
-                            num_subtask_envs_with_invalid_spawns = (
-                                subtask_env_has_invalid_spawn.sum()
-                            )
-                            low = torch.zeros(
-                                num_subtask_envs_with_invalid_spawns, dtype=torch.int
-                            )
-                            high = num_navigable_positions[
-                                subtask_env_has_invalid_spawn
-                            ]
-                            size = (num_subtask_envs_with_invalid_spawns,)
-                            subtask_sampled_init_idxs = (
-                                torch.randint(2**63 - 1, size=size) % (high - low).int()
-                                + low.int()
-                            ).int()
-
-                            robot_pose = Pose.create(curr_robot_raw_pose.clone())
-                            xys = navigable_positions[
-                                torch.arange(navigable_positions.size(0))[
-                                    subtask_env_has_invalid_spawn
-                                ],
-                                subtask_sampled_init_idxs,
-                            ]
-                            xys += torch.clamp(
-                                torch.normal(0, SPAWN_XY_NOISE_STD, xys.shape),
-                                -SPAWN_XY_NOISE_MAX,
-                                SPAWN_XY_NOISE_MAX,
-                            ).to(device)
-                            robot_pose.p[subtask_envs_with_invalid_spawns, :2] = xys
-                            robot_pose.q[subtask_envs_with_invalid_spawns] = (
-                                Pose.create(sapien.Pose()).q
-                            )
-                            curr_robot_raw_pose[subtask_envs_with_invalid_spawns] = (
-                                robot_pose.raw_pose[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-                            )
-
-                            curr_robot_qpos[subtask_envs_with_invalid_spawns, 2] = 0
-                            curr_robot_qvel[subtask_envs_with_invalid_spawns] = 0
-
-                            uenv.agent.robot.set_pose(
-                                Pose.create(curr_robot_raw_pose.clone())
-                            )
-                            uenv.agent.robot.set_qpos(curr_robot_qpos.clone())
-                            uenv.agent.robot.set_qvel(curr_robot_qvel.clone())
-
-                            if physx.is_gpu_enabled():
-                                uenv.scene._gpu_apply_all()
-                                uenv.scene.px.gpu_update_articulation_kinematics()
-                                uenv.scene._gpu_fetch_all()
-
-                            goal_pose_wrt_base = (
-                                uenv.agent.base_link.pose.inv()
-                                * uenv.subtask_goals[subtask_num].pose
-                            )
-                            targ = goal_pose_wrt_base.p[
-                                subtask_envs_with_invalid_spawns, :2
-                            ]
-                            uc_targ = targ / torch.norm(targ, dim=1).unsqueeze(
-                                -1
-                            ).expand(*targ.shape)
-                            rots = torch.sign(uc_targ[..., 1]) * torch.arccos(
-                                uc_targ[..., 0]
-                            )
-                            rots += torch.clamp(
-                                torch.normal(0, SPAWN_XY_NOISE_STD, rots.shape),
-                                -SPAWN_ROT_NOISE_MAX,
-                                SPAWN_ROT_NOISE_MAX,
-                            ).to(device)
-                            curr_robot_qpos[subtask_envs_with_invalid_spawns, 2] += rots
-
-                            uenv.agent.robot.set_pose(
-                                Pose.create(curr_robot_raw_pose.clone())
-                            )
-                            uenv.agent.robot.set_qpos(curr_robot_qpos.clone())
-                            uenv.agent.robot.set_qvel(curr_robot_qvel.clone())
-
-                            if physx.is_gpu_enabled():
-                                uenv.scene._gpu_apply_all()
-                                uenv.scene.px.gpu_update_articulation_kinematics()
-                                uenv.scene.step()
-                                uenv.scene._gpu_fetch_all()
-                            robot_force = uenv.agent.robot.get_net_contact_forces(
-                                uenv.agent.robot_link_names
-                            )[subtask_envs].norm(dim=-1)
-                            if physx.is_gpu_enabled():
-                                robot_force = robot_force.sum(dim=-1)
-
-                            acceptable_spawn = robot_force == 0
-
-                            ##########################################
-                            # Check dist and rot within bounds
-                            ##########################################
-                            uenv.agent.robot.set_pose(
-                                Pose.create(curr_robot_raw_pose.clone())
-                            )
-                            uenv.agent.robot.set_qpos(curr_robot_qpos.clone())
-                            uenv.agent.robot.set_qvel(curr_robot_qvel.clone())
-
-                            if physx.is_gpu_enabled():
-                                uenv.scene._gpu_apply_all()
-                                uenv.scene.px.gpu_update_articulation_kinematics()
-                                uenv.scene._gpu_fetch_all()
-
-                            curr_robot_raw_pose[subtask_envs_with_invalid_spawns] = (
-                                uenv.agent.robot.pose.raw_pose[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-                            )
-                            curr_robot_qpos[subtask_envs_with_invalid_spawns] = (
-                                uenv.agent.robot.qpos[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-                            )
-                            curr_robot_qvel[subtask_envs_with_invalid_spawns] = (
-                                uenv.agent.robot.qvel[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-                            )
-
-                            goal_pose_wrt_base = (
-                                uenv.agent.base_link.pose.inv()
-                                * uenv.subtask_goals[subtask_num].pose
-                            )
-                            targ = goal_pose_wrt_base.p[subtask_envs, :2]
-                            uc_targ = targ / torch.norm(targ, dim=1).unsqueeze(
-                                -1
-                            ).expand(*targ.shape)
-                            rot_from_goal = torch.sign(uc_targ[..., 1]) * torch.arccos(
-                                uc_targ[..., 0]
-                            )
-                            dist_from_goal = (
-                                uenv.subtask_goals[subtask_num].pose.p[subtask_envs, :2]
-                                - uenv.agent.robot.pose.p[subtask_envs, :2]
-                            ).norm(dim=-1)
-
-                            # this is an extra condition to make sure spawns aren't outside the house
-                            dist_from_navigable_position = (
-                                (
-                                    navigable_positions
-                                    - uenv.agent.robot.pose.p[
-                                        subtask_envs, :2
-                                    ].unsqueeze(1)
-                                )
-                                .norm(dim=-1)
-                                .min(dim=-1)
-                                .values
-                            )
-
-                            nav_success = (
-                                (
-                                    rot_from_goal
-                                    <= uenv.navigate_cfg.navigated_successfully_rot
-                                )
-                                # & (
-                                #     dist_from_goal
-                                #     <= uenv.navigate_cfg.navigated_successfully_dist
-                                # )
-                                & (dist_from_navigable_position <= 0.04)
-                            )
-                            acceptable_spawn &= nav_success
-
-                            ##########################################
-                            # Check obj not clipping
-                            ##########################################
-                            if _subtask_obj is not None:
-                                _subtask_obj_linear_velocity[
-                                    subtask_envs_with_invalid_spawns
-                                ] = 0
-                                _subtask_obj_angular_velocity[
-                                    subtask_envs_with_invalid_spawns
-                                ] = 0
-
-                                teleported_subtask_obj_raw_pose = (
-                                    uenv.agent.tcp.pose
-                                    * Pose.create(_subtask_obj_raw_pose_wrt_tcp)
-                                ).raw_pose
-                                _subtask_obj_raw_pose[
-                                    subtask_envs_with_invalid_spawns
-                                ] = teleported_subtask_obj_raw_pose[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-
-                                _subtask_obj.set_pose(
-                                    Pose.create(_subtask_obj_raw_pose.clone())
-                                )
-                                _subtask_obj.set_linear_velocity(
-                                    _subtask_obj_linear_velocity.clone()
-                                )
-                                _subtask_obj.set_angular_velocity(
-                                    _subtask_obj_angular_velocity.clone()
-                                )
-
-                                uenv.agent.robot.set_pose(
-                                    sapien.Pose(p=[999, 999, 999])
-                                )
-
-                                if physx.is_gpu_enabled():
-                                    uenv.scene._gpu_apply_all()
-                                    uenv.scene.px.gpu_update_articulation_kinematics()
-                                    uenv.scene.step()
-                                    uenv.scene._gpu_fetch_all()
-
-                                obj_force = _subtask_obj.get_net_contact_forces()[
-                                    subtask_envs
-                                ].norm(dim=-1)
-                                acceptable_spawn &= obj_force == 0
-
-                                curr_subtask_obj_raw_poses[subtask_num][
-                                    subtask_envs_with_invalid_spawns
-                                ] = _subtask_obj_raw_pose[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-                                curr_subtask_obj_linear_velocities[subtask_num][
-                                    subtask_envs_with_invalid_spawns
-                                ] = _subtask_obj_linear_velocity[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-                                curr_subtask_obj_angular_velocities[subtask_num][
-                                    subtask_envs_with_invalid_spawns
-                                ] = _subtask_obj_angular_velocity[
-                                    subtask_envs_with_invalid_spawns
-                                ].clone()
-
-                            subtask_env_has_invalid_spawn[acceptable_spawn] = False
-
-                    ori_robot_raw_pose[navigate_env_idx] = curr_robot_raw_pose[
-                        navigate_env_idx
-                    ].clone()
-                    ori_robot_qpos[navigate_env_idx] = curr_robot_qpos[
-                        navigate_env_idx
-                    ].clone()
-                    ori_robot_qvel[navigate_env_idx] = curr_robot_qvel[
-                        navigate_env_idx
-                    ].clone()
-
-                    for subtask_num in currently_running_nav_subtasks:
-                        _subtask_envs = torch.where(
-                            uenv.subtask_pointer == subtask_num
-                        )[0]
-                        if uenv.subtask_objs[subtask_num] is not None:
-                            ori_subtask_obj_raw_poses[subtask_num][_subtask_envs] = (
-                                curr_subtask_obj_raw_poses[subtask_num][
-                                    _subtask_envs
-                                ].clone()
-                            )
-                            ori_subtask_obj_linear_velocities[subtask_num][
-                                _subtask_envs
-                            ] = curr_subtask_obj_linear_velocities[subtask_num][
-                                _subtask_envs
-                            ].clone()
-                            ori_subtask_obj_angular_velocities[subtask_num][
-                                _subtask_envs
-                            ] = curr_subtask_obj_angular_velocities[subtask_num][
-                                _subtask_envs
-                            ].clone()
-                        uenv.subtask_pointer[_subtask_envs] += 1
-
-                    # set states as needed
-                    uenv.set_state_dict(recursive_deepcopy(ori_state_dict))
-                    uenv.agent.robot.set_pose(Pose.create(ori_robot_raw_pose.clone()))
-                    uenv.agent.robot.set_qpos(ori_robot_qpos.clone())
-                    uenv.agent.robot.set_qvel(ori_robot_qvel.clone())
-
-                    for subtask_num in currently_running_nav_subtasks:
-                        uenv.subtask_pointer[
-                            torch.where(uenv.subtask_pointer == subtask_num)[0]
-                        ] += 1
-                        if uenv.subtask_objs[subtask_num] is not None:
-                            uenv.subtask_objs[subtask_num].set_pose(
-                                Pose.create(ori_subtask_obj_raw_poses[subtask_num])
-                            )
-                            uenv.subtask_objs[subtask_num].set_linear_velocity(
-                                ori_subtask_obj_linear_velocities[subtask_num]
-                            )
-                            uenv.subtask_objs[subtask_num].set_angular_velocity(
-                                ori_subtask_obj_angular_velocities[subtask_num]
-                            )
-
-                    if physx.is_gpu_enabled():
-                        uenv.scene._gpu_apply_all()
-                        uenv.scene.px.gpu_update_articulation_kinematics()
-                        uenv.scene._gpu_fetch_all()
-                subtask_pointer[navigate_env_idx] += 1
-                subtask_type = get_subtask_type()
-
                 # find correct envs for each subtask policy
                 pick_env_idx = subtask_type == 0
                 place_env_idx = subtask_type == 1
+                navigate_env_idx = subtask_type == 2
                 open_env_idx = subtask_type == 3
                 close_env_idx = subtask_type == 4
 
@@ -911,10 +431,14 @@ def eval(cfg: EvalConfig):
 
                 # query appropriate policy and place in action
                 def set_subtask_targ_policy_act(subtask_name, subtask_env_idx):
-                    if cfg.policy_type == "rl_per_obj" or subtask_name in [
-                        "open",
-                        "close",
-                    ]:
+                    if (
+                        cfg.policy_type == "rl_per_obj"
+                        or subtask_name
+                        in [
+                            "open",
+                            "close",
+                        ]
+                    ) and subtask_name != "navigate":
                         for tn, targ_env_idx in tn_env_idxs.items():
                             subtask_targ_env_idx = subtask_env_idx & targ_env_idx
                             if torch.any(subtask_targ_env_idx):
@@ -930,6 +454,8 @@ def eval(cfg: EvalConfig):
                     set_subtask_targ_policy_act("pick", pick_env_idx)
                 if torch.any(place_env_idx):
                     set_subtask_targ_policy_act("place", place_env_idx)
+                if torch.any(navigate_env_idx):
+                    set_subtask_targ_policy_act("navigate", navigate_env_idx)
                 if torch.any(open_env_idx):
                     set_subtask_targ_policy_act("open", open_env_idx)
                 if torch.any(close_env_idx):

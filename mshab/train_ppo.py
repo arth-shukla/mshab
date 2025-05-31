@@ -65,7 +65,7 @@ class PPOConfig:
     """log frequency in terms of global_step"""
     save_freq: int = 100_000
     """save frequency in terms of global_step"""
-    eval_freq: int = 100_000
+    eval_freq: Optional[int] = 100_000
     """evaluation frequency in terms of global_step"""
     finite_horizon_gae: bool = True
     torch_deterministic: bool = True
@@ -178,10 +178,11 @@ def train(cfg: TrainConfig):
         video_path=cfg.logger.train_video_path,
     )
     print("making eval env", flush=True)
-    eval_envs = make_env(
-        cfg.eval_env,
-        video_path=cfg.logger.eval_video_path,
-    )
+    if cfg.algo.eval_freq:
+        eval_envs = make_env(
+            cfg.eval_env,
+            video_path=cfg.logger.eval_video_path,
+        )
     assert isinstance(
         envs.single_action_space, gym.spaces.Box
     ), "only continuous action space is supported"
@@ -320,7 +321,7 @@ def train(cfg: TrainConfig):
         # ---------------------------------------------------------------------------------------------
         # EVAL
         # ---------------------------------------------------------------------------------------------
-        if eval_envs is not None and check_freq(cfg.algo.eval_freq):
+        if cfg.algo.eval_freq and check_freq(cfg.algo.eval_freq):
             eval_envs.reset()
             for _ in range(eval_envs.max_episode_steps):
                 with torch.no_grad():
@@ -534,7 +535,8 @@ def train(cfg: TrainConfig):
 
     # close everyhting once script is done running
     envs.close()
-    eval_envs.close()
+    if cfg.algo.eval_freq:
+        eval_envs.close()
     logger.close()
 
 
