@@ -402,7 +402,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 still_navigating &= begin_navigating
 
                 # nav dist reward
-                navigating_rew = 6 * (
+                navigating_rew = 8 * (
                     1 - torch.tanh(info["distance_from_goal"][still_navigating] / 10)
                 )
                 reward[still_navigating] += navigating_rew
@@ -418,7 +418,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 reward[still_navigating] += still_navigating_vel_rew
 
                 # when done nav, give full from still_nav + 2
-                reward[done_navigating] += 10
+                reward[done_navigating] += 12
 
                 # stop moving base when done
                 bqvel = torch.norm(self.agent.robot.qvel[done_moving, :3], dim=1)
@@ -449,7 +449,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 # info["static_rew"] = x.clone()
 
             # collisions
-            step_no_col_rew = 8 * (
+            step_no_col_rew = 5 * (
                 1
                 - torch.tanh(
                     3 * (torch.clamp(0.005 * info["robot_force"], min=0.2) - 0.2)
@@ -462,7 +462,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 self.agent.robot.qpos[..., 3:-2] - self.resting_qpos,
                 dim=1,
             )
-            arm_resting_orientation_rew = 4 * (1 - torch.tanh(arm_to_resting_diff / 5))
+            arm_resting_orientation_rew = 2 * (1 - torch.tanh(arm_to_resting_diff / 5))
             reward += arm_resting_orientation_rew
 
             # enforce ee at rest
@@ -483,7 +483,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        max_reward = 29.0
+        max_reward = 26.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     # -------------------------------------------------------------------------------------------------
