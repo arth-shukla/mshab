@@ -35,8 +35,8 @@ class SubtaskTrainEnv(SequentialTaskEnv):
         # additional spawn randomization, shouldn't need to change
         spawn_data_fp=None,
         # colliison tracking
-        robot_force_mult=0,
-        robot_force_penalty_min=0,
+        robot_force_mult=0.001,
+        robot_force_penalty_min=0.2,
         # additional randomization
         target_randomization=False,
         **kwargs,

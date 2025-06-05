@@ -352,14 +352,6 @@ def eval(cfg: EvalConfig):
                 / "policy.pt"
             )
             policies[subtask_name][targ_name] = get_policy_act_fn(cfg_path, ckpt_path)
-    policies["navigate"] = dict()
-    _nav_p_dir = Path(
-        "mshab_exps/NavigateSubtaskTrain-v0/tidy_house-rcad-ppo-navigate/ppo-navigate-all-local"
-    )
-    policies["navigate"]["all"] = get_policy_act_fn(
-        _nav_p_dir / "config.yml",
-        _nav_p_dir / "models/latest.pt",
-    )
 
     def act(obs):
         with torch.no_grad():

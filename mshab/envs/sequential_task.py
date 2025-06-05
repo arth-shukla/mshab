@@ -78,7 +78,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
         ee_rest_thresh=0.05,
     )
     navigate_cfg = NavigateSubtaskConfig(
-        horizon=200,
+        horizon=500,
         ee_rest_thresh=0.05,
         navigated_successfully_dist=2,
     )

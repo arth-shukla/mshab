@@ -41,7 +41,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     """
 
     navigate_cfg = NavigateSubtaskConfig(
-        horizon=200,
+        horizon=1000,
         ee_rest_thresh=0.05,
         robot_cumulative_force_limit=torch.inf,
     )

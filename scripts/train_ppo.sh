@@ -2,20 +2,20 @@
 
 SEED=0
 
-TASK=set_table
-SUBTASK=open
+TASK=tidy_house
+SUBTASK=navigate
 SPLIT=train
-OBJ=kitchen_counter
+OBJ=all
 
 # shellcheck disable=SC2001
 ENV_ID="$(echo $SUBTASK | sed 's/\b\(.\)/\u\1/g')SubtaskTrain-v0"
 WORKSPACE="mshab_exps"
 GROUP=$TASK-rcad-ppo-$SUBTASK
-EXP_NAME="$ENV_ID/$GROUP/ppo-$SUBTASK-$OBJ-local"
+EXP_NAME="$ENV_ID/$GROUP/ppo-$SUBTASK-$OBJ-local-rew2-forw_half_back-gamgae"
 # shellcheck disable=SC2001
 PROJECT_NAME="MS-HAB-RCAD-$(echo $SUBTASK | sed 's/\b\(.\)/\u\1/g')-$TASK-ppo"
 
-WANDB=False
+WANDB=True
 TENSORBOARD=True
 if [[ -z "${MS_ASSET_DIR}" ]]; then
     MS_ASSET_DIR="$HOME/.maniskill"
@@ -36,6 +36,8 @@ fi
 
 if [ "$SUBTASK" = "pick" ]; then
     extra_stat_keys='["is_grasped", "ee_rest", "robot_rest", "is_static", "cumulative_force_within_limit"]'
+elif [ "$SUBTASK" = "navigate" ]; then
+    extra_stat_keys='["is_grasped", "oriented_correctly", "distance_from_goal", "navigated_close", "ee_rest", "robot_rest", "is_static"]'
 elif [ "$SUBTASK" = "open" ]; then
     extra_stat_keys='["is_grasped", "articulation_open", "ee_rest", "robot_rest", "is_static", "cumulative_force_within_limit"]'
 elif [ "$SUBTASK" = "close" ]; then
@@ -44,7 +46,7 @@ else
     extra_stat_keys='[]'
 fi
 
-
+max_episode_steps=1000
 args=(
     "logger.wandb_cfg.group=$GROUP"
     "logger.exp_name=$EXP_NAME"
@@ -52,22 +54,28 @@ args=(
     "env.env_id=$ENV_ID"
     "env.task_plan_fp=$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json"
     "env.spawn_data_fp=$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt"
-    "algo.gamma=0.9"
+    "algo.gamma=0.95"
+    "algo.gae=0.9"
     "algo.update_epochs=8"
     "algo.num_minibatches=16"
-    "algo.total_timesteps=100000000"
-    "algo.eval_freq=100000"
-    "algo.log_freq=10000"
-    "algo.save_freq=100000"
+    "algo.total_timesteps=100_000_000"
+    "algo.eval_freq=null"
+    "algo.log_freq=500_000"
+    "algo.save_freq=500_000"
+    "algo.save_backup_ckpts=True"
     "eval_env.make_env=True"
     "env.make_env=True"
     "env.num_envs=189"
     "eval_env.num_envs=63"
-    "env.max_episode_steps=100"
-    "eval_env.max_episode_steps=200"
+    "env.max_episode_steps=$max_episode_steps"
+    "eval_env.max_episode_steps=$max_episode_steps"
+    "env.env_kwargs.task_cfgs.navigate.horizon=$max_episode_steps"
+    "eval_env.env_kwargs.task_cfgs.navigate.horizon=$max_episode_steps"
+    "algo.num_steps=100"
+    "env.continuous_task=False"
     "env.record_video=False"
     "env.info_on_video=False"
-    "eval_env.record_video=True"
+    "eval_env.record_video=False"
     "eval_env.info_on_video=True"
     "eval_env.save_video_freq=10"
     "logger.wandb=$WANDB"

@@ -7,7 +7,7 @@
 SEED=0
 
 TASK=tidy_house
-SUBTASK=pick
+SUBTASK=navigate
 SPLIT=train
 OBJ=all
 
@@ -86,7 +86,11 @@ else
         fi
 
         # horizon
-        MAX_EPISODE_STEPS=200
+        if [[ $SUBTASK == "navigate" ]]; then
+                MAX_EPISODE_STEPS=1000
+        else
+                MAX_EPISODE_STEPS=200
+        fi
 
         # extra args
         # shellcheck disable=SC2089

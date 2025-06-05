@@ -166,6 +166,7 @@ class NavigateSubtask(Subtask):
 @dataclass
 class NavigateSubtaskConfig(SubtaskConfig):
     task_id: int = 2
+    horizon: int = 500
     navigated_successfully_dist: float = 2
     navigated_successfully_rot: float = 0.5
     ignore_arm_checkers: bool = False
