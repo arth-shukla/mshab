@@ -57,7 +57,7 @@ class GenSpawnPositionArgs:
     num_workers: int
     # not passable (for now)
     root = ASSET_DIR / "scene_datasets/replica_cad_dataset/rearrange/task_plans"
-    num_spawns_per_task_plan = 100
+    num_spawns_per_task_plan = 1
     init_check_scene_steps = 1
     robot_init_qpos_noise = 0.2
     spawn_loc_radius = 2
@@ -141,7 +141,7 @@ def gen_pick_spawn_data(
             scene_builder.navigable_positions[0].vertices
         )
 
-        if subtask.articulation_config is not None:
+        if args.task == "set_table":
             subtask_articulation = scene_builder.articulations[
                 f"env-0_{subtask.articulation_config.articulation_id}"
             ]
@@ -166,7 +166,7 @@ def gen_pick_spawn_data(
                 ),
             )
 
-            if subtask.articulation_config is not None:
+            if args.task == "set_table":
                 if subtask.articulation_config.articulation_type == "kitchen_counter":
                     subtask_obj_pose_wrt_container = (
                         subtask_articulation.links[
@@ -271,11 +271,11 @@ def gen_pick_spawn_data(
             ):
                 spawn_pos.append(env.agent.robot.pose.p[0])
                 spawn_qpos.append(env.agent.robot.qpos[0])
-                if subtask.articulation_config is not None:
+                if args.task == "set_table":
                     spawn_articulation_qpos.append(subtask_articulation.qpos[0])
                     spawn_obj_raw_pose.append(subtask_obj.pose.raw_pose[0])
 
-        if subtask.articulation_config is not None:
+        if args.task == "set_table":
             subtask_uid_to_spawn_data[subtask.uid] = dict(
                 robot_pos=torch.stack(spawn_pos),
                 robot_qpos=torch.stack(spawn_qpos),
@@ -960,6 +960,22 @@ def gen_navigate_spawn_data(
             scene_builder.navigable_positions[0].vertices
         )
 
+        if args.task == "set_table":
+            subtask_articulation = None
+            if subtask.articulation_config is not None:
+                subtask_articulation = scene_builder.articulations[
+                    f"env-0_{subtask.articulation_config.articulation_id}"
+                ]
+                if subtask.articulation_config.articulation_type == "fridge":
+                    min_open_qpos_frac = 0.75
+                elif subtask.articulation_config.articulation_type == "kitchen_counter":
+                    min_open_qpos_frac = 0.9
+                else:
+                    raise NotImplementedError(
+                        f"{subtask.articulation_config.articulation_type=} not supported"
+                    )
+            spawn_articulation_qpos = []
+
         spawn_pos, spawn_qpos = [], []
         spawn_obj_raw_pose_wrt_tcp = []
         while len(spawn_pos) < args.num_spawns_per_task_plan:
@@ -985,29 +1001,38 @@ def gen_navigate_spawn_data(
                 ),
             )
 
-            subtask_starting_goal_pose = Pose.create_from_pq(
-                q=GOAL_POSE_Q,
-                p=(
-                    [-1, 0, 0.02]
-                    if subtask.prev_goal_pos is None
-                    else subtask.prev_goal_pos
-                ),
-            )
-            starting_goal_center = subtask_starting_goal_pose.p[0, :2]
+            if args.task == "set_table":
+                if subtask_articulation is None:
+                    new_subtask_articulation_qpos = torch.zeros((1, 1))
+                else:
+                    robot_init_pos = env.agent.robot.pose.p
+                    robot_init_pos[:, :2] = 99999
+                    env.agent.robot.set_pose(Pose.create_from_pq(p=robot_init_pos))
 
-            positions_wrt_centers = navigable_positions - starting_goal_center
-            dists = torch.norm(positions_wrt_centers, dim=-1)
+                    new_subtask_articulation_qpos = subtask_articulation.qpos * 0
+                    joint_qmax = subtask_articulation.qlimits[
+                        :,
+                        subtask.articulation_config.articulation_handle_active_joint_idx,
+                        1,
+                    ]
+                    joint_qmin = subtask_articulation.qlimits[
+                        :,
+                        subtask.articulation_config.articulation_handle_active_joint_idx,
+                        0,
+                    ]
+                    joint_qrange = joint_qmax - joint_qmin
+                    joint_open_qmin = joint_qrange * min_open_qpos_frac + joint_qmin
+                    rand_joint_qpos = (
+                        torch.rand_like(joint_qmax) * (joint_qmax - joint_open_qmin)
+                    ) + joint_open_qmin
+                    new_subtask_articulation_qpos[
+                        :,
+                        subtask.articulation_config.articulation_handle_active_joint_idx,
+                    ] = rand_joint_qpos
+                    subtask_articulation.set_qpos(new_subtask_articulation_qpos)
 
             # NOTE (arth): for nav, we spawn all over the apartment
             new_navigable_positions = navigable_positions
-            # new_navigable_positions = navigable_positions[dists < args.spawn_loc_radius]
-            # positions_wrt_centers = positions_wrt_centers[dists < args.spawn_loc_radius]
-            # dists = dists[dists < args.spawn_loc_radius]
-            rots = (
-                torch.sign(positions_wrt_centers[..., 1])
-                * torch.arccos(positions_wrt_centers[..., 0] / dists)
-                + torch.pi
-            ) % (2 * torch.pi)
 
             # spawn to try
             spawn_num = torch.randint(
@@ -1025,7 +1050,7 @@ def gen_navigate_spawn_data(
             env.agent.robot.set_pose(Pose.create_from_pq(p=robot_pos))
 
             # base rot
-            rot = torch.rand_like(rots[spawn_num]) * 2 * torch.pi
+            rot = torch.rand((1,)) * 2 * torch.pi
             qpos[:, 2] = rot
             qpos[:, 2:3] += torch.clamp(
                 torch.normal(0, 0.25, qpos[:, 2:3].shape), -0.5, 0.5
@@ -1095,12 +1120,22 @@ def gen_navigate_spawn_data(
                     spawn_obj_raw_pose_wrt_tcp.append(torch.zeros(7))
                 else:
                     spawn_obj_raw_pose_wrt_tcp.append(obj_raw_pose_wrt_tcp[0])
+                if args.task == "set_table":
+                    spawn_articulation_qpos.append(new_subtask_articulation_qpos[0])
 
-        subtask_uid_to_spawn_data[subtask.uid] = dict(
-            robot_pos=torch.stack(spawn_pos),
-            robot_qpos=torch.stack(spawn_qpos),
-            obj_raw_pose_wrt_tcp=torch.stack(spawn_obj_raw_pose_wrt_tcp),
-        )
+        if args.task == "set_table":
+            subtask_uid_to_spawn_data[subtask.uid] = dict(
+                robot_pos=torch.stack(spawn_pos),
+                robot_qpos=torch.stack(spawn_qpos),
+                obj_raw_pose_wrt_tcp=torch.stack(spawn_obj_raw_pose_wrt_tcp),
+                articulation_qpos=torch.stack(spawn_articulation_qpos),
+            )
+        else:
+            subtask_uid_to_spawn_data[subtask.uid] = dict(
+                robot_pos=torch.stack(spawn_pos),
+                robot_qpos=torch.stack(spawn_qpos),
+                obj_raw_pose_wrt_tcp=torch.stack(spawn_obj_raw_pose_wrt_tcp),
+            )
 
     return subtask_uid_to_spawn_data
 

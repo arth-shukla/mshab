@@ -596,6 +596,44 @@ def gen_close_task_plans(scene_builder):
 def gen_navigate_task_plans(scene_builder):
     q = transforms3d.quaternions.axangle2quat(np.array([1, 0, 0]), theta=np.deg2rad(90))
     task_plans = []
+    cached_urdfs = dict()
+
+    def get_urdf_info(articulation_id, link_num):
+        if articulation_id in cached_urdfs:
+            robot = cached_urdfs[articulation_id]
+        else:
+            urdf_dir = (
+                ASSET_DIR / "scene_datasets/replica_cad_dataset/urdf" / articulation_id
+            )
+            urdf_file = urdf_dir / f"{articulation_id}.urdf"
+            with open(urdf_file, "r") as f:
+                urdf_string = f.read()
+            xml = ET.fromstring(urdf_string.encode("utf-8"))
+            robot = URDF._from_xml(xml, str(urdf_dir.absolute()), lazy_load_meshes=True)
+            cached_urdfs[articulation_id] = robot
+
+        if articulation_id == "fridge":
+            marker_link_name = "top_door"
+            handle_link_idx = [link.name for link in robot.links].index(
+                marker_link_name
+            )
+        else:
+            marker_link_name = robot.links[link_num].name
+            handle_link_idx = link_num
+
+        # NOTE (arth): For RCAD kitchen_counter and fridge, the above URDF object has one less joint than links.
+        #       SAPIEN left-appends an extra `''` joint so the links and joints correspond, so we follow suit
+        # NOTE (arth): not sure if this holds true for *all* articulations, or just these specific ones. mileage may vary
+        padded_joint_names = [""] + [j.name for j in robot.joints]
+        assert len(padded_joint_names) == len(
+            robot.links
+        ), "Mismatch in num joints and links"
+
+        handle_active_joint_idx = robot.actuated_joint_names.index(
+            padded_joint_names[handle_link_idx]
+        )
+        return handle_link_idx, handle_active_joint_idx
+
     for init_config_name in tqdm(scene_builder._rearrange_configs):
         with open(
             osp.join(
@@ -620,39 +658,157 @@ def gen_navigate_task_plans(scene_builder):
         target_poses = episode_json["targets"]
 
         prev_goal_pos = None
-        for base_actor_id in episode_json["info"]["object_labels"].keys():
+        for (
+            base_actor_id,
+            (base_target_receptacle_id, target_link_num),
+            (base_goal_receptacle_id, goal_link_num),
+        ) in zip(
+            episode_json["info"]["object_labels"].keys(),
+            episode_json["target_receptacles"],
+            episode_json["goal_receptacles"],
+        ):
             actor_id, actor_num = get_name_num(base_actor_id)
+            target_receptacle_id, target_receptacle_num = get_name_num(
+                base_target_receptacle_id
+            )
+            goal_receptacle_id, goal_receptacle_num = get_name_num(
+                base_goal_receptacle_id
+            )
 
             obj_pos = init_poses[f"{actor_id}-{actor_num}"].p.tolist()
             goal_pos = (
                 sapien.Pose(q=q) * sapien.Pose(matrix=target_poses[base_actor_id])
             ).p.tolist()
 
-            # prev goal -> obj
-            task_plans.append(
-                TaskPlan(
-                    subtasks=[
-                        NavigateSubtask(goal_pos=obj_pos, prev_goal_pos=prev_goal_pos)
-                    ],
-                    build_config_name=build_config_name,
-                    init_config_name=init_config_name,
-                )
-            )
+            if args.task == "tidy_house":
+                task_plans += [
+                    # prev goal -> obj
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                goal_pos=obj_pos, prev_goal_pos=prev_goal_pos
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    ),
+                    # obj -> place goal
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                obj_id=f"{actor_id}-{actor_num}",
+                                goal_pos=goal_pos,
+                                prev_goal_pos=obj_pos,
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    ),
+                ]
 
-            # obj -> place goal
-            task_plans.append(
-                TaskPlan(
-                    subtasks=[
-                        NavigateSubtask(
-                            obj_id=f"{actor_id}-{actor_num}",
-                            goal_pos=goal_pos,
-                            prev_goal_pos=obj_pos,
-                        )
-                    ],
-                    build_config_name=build_config_name,
-                    init_config_name=init_config_name,
+            elif args.task == "prepare_groceries":
+                # prev goal -> obj
+                target_articulation_config = None
+                if "fridge" in base_target_receptacle_id:
+                    handle_link_idx, handle_active_joint_idx = get_urdf_info(
+                        target_receptacle_id, target_link_num
+                    )
+                    target_articulation_config = ArticulationConfig(
+                        articulation_type=target_receptacle_id,
+                        articulation_id=f"{target_receptacle_id}-{target_receptacle_num}",
+                        articulation_handle_link_idx=handle_link_idx,
+                        articulation_handle_active_joint_idx=handle_active_joint_idx,
+                    )
+                task_plans.append(
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                goal_pos=obj_pos,
+                                prev_goal_pos=prev_goal_pos,
+                                articulation_config=target_articulation_config,
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    )
                 )
-            )
+
+                # obj -> place goal
+                goal_articulation_config = None
+                if "fridge" in base_goal_receptacle_id:
+                    handle_link_idx, handle_active_joint_idx = get_urdf_info(
+                        goal_receptacle_id, goal_link_num
+                    )
+                    goal_articulation_config = ArticulationConfig(
+                        articulation_type=goal_receptacle_id,
+                        articulation_id=f"{goal_receptacle_id}-{goal_receptacle_num}",
+                        articulation_handle_link_idx=handle_link_idx,
+                        articulation_handle_active_joint_idx=handle_active_joint_idx,
+                    )
+                task_plans.append(
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                obj_id=f"{actor_id}-{actor_num}",
+                                goal_pos=goal_pos,
+                                prev_goal_pos=obj_pos,
+                                articulation_config=goal_articulation_config,
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    )
+                )
+
+            elif args.task == "set_table":
+                target_handle_link_idx, target_handle_active_joint_idx = get_urdf_info(
+                    target_receptacle_id, target_link_num
+                )
+                target_articulation_config = ArticulationConfig(
+                    articulation_type=target_receptacle_id,
+                    articulation_id=f"{target_receptacle_id}-{target_receptacle_num}",
+                    articulation_handle_link_idx=target_handle_link_idx,
+                    articulation_handle_active_joint_idx=target_handle_active_joint_idx,
+                )
+
+                task_plans += [
+                    # nav to articulation for open
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                goal_pos=obj_pos,
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    ),
+                    # nav to receptacle for place
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                obj_id=f"{actor_id}-{actor_num}",
+                                goal_pos=goal_pos,
+                                articulation_config=target_articulation_config,
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    ),
+                    # nav to opened articulation for close
+                    TaskPlan(
+                        subtasks=[
+                            NavigateSubtask(
+                                articulation_config=target_articulation_config,
+                                remove_obj_id=f"{actor_id}-{actor_num}",
+                            )
+                        ],
+                        build_config_name=build_config_name,
+                        init_config_name=init_config_name,
+                    ),
+                ]
+
+            else:
+                raise NotImplementedError(args.task)
 
             prev_goal_pos = goal_pos
 

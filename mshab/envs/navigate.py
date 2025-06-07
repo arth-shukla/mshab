@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 import trimesh
 
@@ -15,6 +15,7 @@ from mani_skill.utils.geometry.rotation_conversions import (
 )
 from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs import Actor
+from mani_skill.utils.structs.articulation import Articulation
 from mani_skill.utils.structs.link import Link
 from mani_skill.utils.structs.pose import Pose
 
@@ -78,9 +79,6 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 goal_type="sphere",
             )
         ]
-        self.prev_goal_pos_goal = self._make_goal(
-            radius=0.15, name="prev_goal_0", goal_type="sphere", color=[1, 0, 0, 1]
-        )
 
         if self.use_geodesic:
             bcis = common.to_tensor(self.build_config_idxs, device=self.device)
@@ -168,7 +166,10 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                         spawn_selection_idx = [spawn_selection_idx]
                     batched_spawn_data[k].append(v[spawn_selection_idx])
             for k, v in batched_spawn_data.items():
-                if k == "articulation_qpos":
+                if (
+                    self.subtask_articulations[0] is not None
+                    and k == "articulation_qpos"
+                ):
                     articulation_qpos = torch.zeros(
                         (env_idx.numel(), self.subtask_articulations[0].max_dof),
                         device=self.device,
@@ -186,41 +187,55 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             if "robot_qpos" in batched_spawn_data:
                 self.agent.robot.set_qpos(batched_spawn_data["robot_qpos"])
             subtask_obj = self.subtask_objs[0]
-            if subtask_obj is not None:
+            if subtask_obj is not None and "obj_raw_pose_wrt_tcp" in batched_spawn_data:
+                # NOTE (arth): for the navigate subtask, the subtask_obj may not exist in all
+                #       envs we assume batched_spawn_data has shape (len(env_idx), ...), and
+                #       select only the dims applicable to the subtask_obj
                 obj_reset_idxs = tensor_intersection_idx(
                     env_idx, subtask_obj._scene_idxs
                 )
-                if "obj_raw_pose" in batched_spawn_data:
-                    subtask_obj.set_pose(
-                        Pose.create(batched_spawn_data["obj_raw_pose"][obj_reset_idxs])
+                if self.gpu_sim_enabled:
+                    self.scene._gpu_apply_all()
+                    self.scene.px.gpu_update_articulation_kinematics()
+                    self.scene._gpu_fetch_all()
+                subtask_obj.set_pose(
+                    Pose.create(
+                        self.agent.tcp.pose.raw_pose[
+                            tensor_intersection(env_idx, subtask_obj._scene_idxs)
+                        ]
+                    )  # NOTE (arth): use tcp.pose for spawning for slightly better accuracy
+                    * Pose.create(
+                        batched_spawn_data["obj_raw_pose_wrt_tcp"][obj_reset_idxs]
                     )
-                if "obj_raw_pose_wrt_tcp" in batched_spawn_data:
-                    if self.gpu_sim_enabled:
-                        self.scene._gpu_apply_all()
-                        self.scene.px.gpu_update_articulation_kinematics()
-                        self.scene._gpu_fetch_all()
-                    subtask_obj.set_pose(
-                        Pose.create(
-                            self.agent.tcp.pose.raw_pose[
-                                tensor_intersection(env_idx, subtask_obj._scene_idxs)
-                            ]
-                        )  # NOTE (arth): use tcp.pose for spawning for slightly better accuracy
-                        * Pose.create(
-                            batched_spawn_data["obj_raw_pose_wrt_tcp"][obj_reset_idxs]
-                        )
-                    )
-            if "articulation_qpos" in batched_spawn_data:
-                self.subtask_articulations[0].set_qpos(
-                    batched_spawn_data["articulation_qpos"]
                 )
-                self.subtask_articulations[0].set_qvel(
-                    self.subtask_articulations[0].qvel[env_idx] * 0
+            subtask_articulation = self.subtask_articulations[0]
+            if (
+                subtask_articulation is not None
+                and "articulation_qpos" in batched_spawn_data
+            ):
+                articulation_reset_idxs = tensor_intersection_idx(
+                    env_idx, subtask_articulation._scene_idxs
+                )
+                subtask_articulation.set_qpos(
+                    batched_spawn_data["articulation_qpos"][articulation_reset_idxs]
+                )
+                subtask_articulation.set_qvel(
+                    torch.zeros_like(
+                        batched_spawn_data["articulation_qpos"][articulation_reset_idxs]
+                    )
                 )
                 if self.gpu_sim_enabled and len(env_idx) == self.num_envs:
                     self.scene._gpu_apply_all()
                     self.scene.px.gpu_update_articulation_kinematics()
                     self.scene.px.step()
                     self.scene._gpu_fetch_all()
+            if self.merged_link is not None:
+                if self.gpu_sim_enabled:
+                    self.scene._gpu_apply_all()
+                    self.scene._gpu_fetch_all()
+                goal_pose = Pose.create(self.subtask_goals[-1].pose.raw_pose.clone())
+                goal_pose.p[self.merged_link._scene_idxs] = self.merged_link.pose.p
+                self.subtask_goals[-1].set_pose(goal_pose)
 
     # NOTE (arth): sometimes will need to nav w/ object, sometimes not
     #       override _merge_navigate_subtasks to allow obj in only some envs
@@ -231,50 +246,115 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         subtask_num: int,
         parallel_subtasks: List[NavigateSubtask],
     ):
-        obj_ids = []
-        scene_idxs = []
+        obj_ids, obj_sis = [], []
+        art_ids, art_sis = [], []
+        replace_goal_with_link_ids_num, replace_goal_with_link_sis = [], []
+        remove_obj_ids, remove_obj_sis = [], []
         for i, subtask in enumerate(parallel_subtasks):
             if subtask.obj_id is not None:
-                scene_idxs.append(i)
+                obj_sis.append(i)
                 obj_ids.append(subtask.obj_id)
+            if subtask.articulation_config is not None:
+                art_sis.append(i)
+                art_ids.append(subtask.articulation_config.articulation_id)
+            if subtask.goal_pos is None:
+                replace_goal_with_link_sis.append(i)
+                replace_goal_with_link_ids_num.append(
+                    (
+                        subtask.articulation_config.articulation_id,
+                        subtask.articulation_config.articulation_handle_link_idx,
+                    )
+                )
+            if subtask.remove_obj_id is not None:
+                remove_obj_sis.append(i)
+                remove_obj_ids.append(subtask.remove_obj_id)
 
-        if len(obj_ids) > 0:
+        if obj_ids:
             merged_obj = Actor.create_from_entities(
                 [
                     self._get_actor_entity(actor_id=f"env-{i}_{oid}", env_num=i)
-                    for i, oid in zip(scene_idxs, obj_ids)
+                    for i, oid in zip(obj_sis, obj_ids)
                 ],
                 scene=self.scene,
-                scene_idxs=torch.tensor(scene_idxs, dtype=torch.int),
+                scene_idxs=torch.tensor(obj_sis, dtype=torch.int),
             )
             merged_obj.name = merged_obj_name = f"obj_{subtask_num}"
+
+            self.agent_finger1_link = Link.create(
+                [self.agent.finger1_link._objs[i] for i in obj_sis],
+                self.scene,
+                obj_sis,
+            )
+            self.agent_finger1_link.name = "agent_finger1_link_for_grasp"
+            self.agent_finger2_link = Link.create(
+                [self.agent.finger2_link._objs[i] for i in obj_sis],
+                self.scene,
+                obj_sis,
+            )
+            self.agent_finger2_link.name = "agent_finger2_link_for_grasp"
         else:
             merged_obj = None
             merged_obj_name = None
+            self.agent_finger1_link = None
+            self.agent_finger2_link = None
         self.subtask_objs.append(merged_obj)
 
         self.subtask_goals.append(self.premade_goal_list[subtask_num])
         self.subtask_goals[-1].set_pose(
             Pose.create_from_pq(
                 q=GOAL_POSE_Q,
-                p=[parallel_subtasks[env_num].goal_pos for env_num in env_idx],
-            )
-        )
-        self.prev_goal_pos_goal.set_pose(
-            Pose.create_from_pq(
-                q=GOAL_POSE_Q,
                 p=[
                     (
-                        parallel_subtasks[env_num].prev_goal_pos
-                        if parallel_subtasks[env_num].prev_goal_pos is not None
-                        else [-1, 0, 0.02]
+                        parallel_subtasks[env_num].goal_pos
+                        if parallel_subtasks[env_num].goal_pos is not None
+                        else [0, 0, 0]
                     )
                     for env_num in env_idx
                 ],
             )
         )
 
-        self.subtask_articulations.append(None)
+        if art_ids:
+            merged_articulation = Articulation.create_from_physx_articulations(
+                [
+                    self._get_articulation_entity(f"env-{env_num}_{aid}", env_num)
+                    for env_num, aid in zip(art_sis, art_ids)
+                ],
+                scene=self.scene,
+                scene_idxs=torch.tensor(art_sis, dtype=torch.int),
+                _merged=True,
+            )
+            merged_articulation.name = f"articulation-{subtask_num}"
+        else:
+            merged_articulation = None
+            self.merged_link = None
+        self.subtask_articulations.append(merged_articulation)
+
+        if replace_goal_with_link_ids_num:
+            self.merged_link = Link.create(
+                [
+                    self._get_link_entity(
+                        f"env-{env_num}_{link_aid}", env_num, link_idx
+                    )
+                    for env_num, (link_aid, link_idx) in zip(
+                        replace_goal_with_link_sis, replace_goal_with_link_ids_num
+                    )
+                ],
+                scene=self.scene,
+                scene_idxs=torch.tensor(replace_goal_with_link_sis, dtype=torch.int),
+            )
+        else:
+            self.merged_link = None
+
+        if remove_obj_ids:
+            Actor.create_from_entities(
+                [
+                    self._get_actor_entity(actor_id=f"env-{i}_{roid}", env_num=i)
+                    for i, roid in zip(remove_obj_sis, remove_obj_ids)
+                ],
+                scene=self.scene,
+                scene_idxs=torch.tensor(remove_obj_sis, dtype=torch.int),
+            ).set_pose(Pose.create_from_pq(p=[-10_000, -10_000, -9000]))
 
         self.task_plan.append(
             NavigateSubtask(
@@ -283,18 +363,16 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             )
         )
 
-        self.agent_finger1_link = Link.create(
-            [self.agent.finger1_link._objs[i] for i in scene_idxs],
-            self.scene,
-            scene_idxs,
+    def _get_link_entity(
+        self, articulation_id: str, env_num: int, link_num: Optional[int] = None
+    ):
+        ms_articulation = self.scene_builder.articulations[articulation_id]
+        link = (
+            ms_articulation.links[link_num]
+            if link_num is not None
+            else ms_articulation.root
         )
-        self.agent_finger1_link.name = "agent_finger1_link_for_grasp"
-        self.agent_finger2_link = Link.create(
-            [self.agent.finger2_link._objs[i] for i in scene_idxs],
-            self.scene,
-            scene_idxs,
-        )
-        self.agent_finger2_link.name = "agent_finger2_link_for_grasp"
+        return link._objs[link._scene_idxs.tolist().index(env_num)]
 
     # -------------------------------------------------------------------------------------------------
 

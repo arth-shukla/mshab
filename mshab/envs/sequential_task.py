@@ -1182,6 +1182,15 @@ class SequentialTaskEnv(SceneManipulationEnv):
                 < self.navigate_cfg.robot_resting_qpos_tolerance_grasping,
                 dim=1,
             )
+            if len(obj._scene_idxs) != self.num_envs:
+                subtask_envs_with_obj = tensor_intersection_idx(
+                    env_idx, obj._scene_idxs
+                )
+                robot_rest[subtask_envs_with_obj] &= torch.all(
+                    robot_rest_dist[subtask_envs_with_obj]
+                    < self.navigate_cfg.robot_resting_qpos_tolerance,
+                    dim=1,
+                )
 
         is_static = self.agent.is_static(threshold=0.2, base_threshold=0.05)[env_idx]
         navigate_success = (

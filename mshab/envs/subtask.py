@@ -104,6 +104,8 @@ class SubtaskTrainEnv(SequentialTaskEnv):
                         spawn_selection_idx = [spawn_selection_idx]
                     batched_spawn_data[k].append(v[spawn_selection_idx])
             for k, v in batched_spawn_data.items():
+                if len(v) != env_idx.numel():
+                    continue
                 if k == "articulation_qpos":
                     articulation_qpos = torch.zeros(
                         (env_idx.numel(), self.subtask_articulations[0].max_dof),
