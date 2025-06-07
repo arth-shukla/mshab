@@ -230,12 +230,20 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                     self.scene.px.step()
                     self.scene._gpu_fetch_all()
             if self.merged_link is not None:
-                if self.gpu_sim_enabled:
-                    self.scene._gpu_apply_all()
-                    self.scene._gpu_fetch_all()
-                goal_pose = Pose.create(self.subtask_goals[-1].pose.raw_pose.clone())
-                goal_pose.p[self.merged_link._scene_idxs] = self.merged_link.pose.p
-                self.subtask_goals[-1].set_pose(goal_pose)
+                merged_link_reset_idxs = tensor_intersection_idx(
+                    env_idx, self.merged_link._scene_idxs
+                )
+                if merged_link_reset_idxs.numel():
+                    if self.gpu_sim_enabled:
+                        self.scene._gpu_apply_all()
+                        self.scene._gpu_fetch_all()
+                    goal_pose = Pose.create(
+                        self.subtask_goals[-1].pose.raw_pose[env_idx].clone()
+                    )
+                    goal_pose.p[merged_link_reset_idxs] = self.merged_link.pose.p[
+                        tensor_intersection_idx(self.merged_link._scene_idxs, env_idx)
+                    ]
+                    self.subtask_goals[-1].set_pose(goal_pose)
 
     # NOTE (arth): sometimes will need to nav w/ object, sometimes not
     #       override _merge_navigate_subtasks to allow obj in only some envs
