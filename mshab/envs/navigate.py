@@ -25,7 +25,7 @@ from mshab.envs.subtask import SubtaskTrainEnv
 from mshab.utils.array import tensor_intersection, tensor_intersection_idx
 
 
-@register_env("NavigateSubtaskTrain-v0", max_episode_steps=200)
+@register_env("NavigateSubtaskTrain-v0", max_episode_steps=1000)
 class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     """
     Task Description
@@ -248,7 +248,12 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     ):
         obj_ids, obj_sis = [], []
         art_ids, art_sis = [], []
-        replace_goal_with_link_ids_num, replace_goal_with_link_sis = [], []
+        (
+            replace_goal_with_link_ids_num,
+            replace_goal_with_link_sis,
+            replace_goal_with_link_nav_xrange,
+            replace_goal_with_link_nav_yrange,
+        ) = ([], [], [], [])
         remove_obj_ids, remove_obj_sis = [], []
         for i, subtask in enumerate(parallel_subtasks):
             if subtask.obj_id is not None:
@@ -258,12 +263,27 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 art_sis.append(i)
                 art_ids.append(subtask.articulation_config.articulation_id)
             if subtask.goal_pos is None:
+                assert subtask.articulation_config is not None
                 replace_goal_with_link_sis.append(i)
                 replace_goal_with_link_ids_num.append(
                     (
                         subtask.articulation_config.articulation_id,
-                        subtask.articulation_config.articulation_handle_link_idx,
+                        (
+                            subtask.articulation_config.articulation_handle_link_idx
+                            if subtask.articulation_config.articulation_type != "fridge"
+                            else None
+                        ),
                     )
+                )
+                replace_goal_with_link_nav_xrange.append(
+                    dict(fridge=[0.933, 1.833], kitchen_counter=[0.3, 1.5])[
+                        subtask.articulation_config.articulation_type
+                    ]
+                )
+                replace_goal_with_link_nav_yrange.append(
+                    dict(fridge=[-0.6, 0.6], kitchen_counter=[-0.6, 0.6])[
+                        subtask.articulation_config.articulation_type
+                    ]
                 )
             if subtask.remove_obj_id is not None:
                 remove_obj_sis.append(i)
@@ -343,6 +363,12 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 scene=self.scene,
                 scene_idxs=torch.tensor(replace_goal_with_link_sis, dtype=torch.int),
             )
+            self.nav_merged_link_xrange = torch.tensor(
+                replace_goal_with_link_nav_xrange, dtype=torch.float
+            )
+            self.nav_merged_link_yrange = torch.tensor(
+                replace_goal_with_link_nav_yrange, dtype=torch.float
+            )
         else:
             self.merged_link = None
 
@@ -412,6 +438,38 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 dim=1,
             )
 
+    def _is_navigated_close(self, env_idx: torch.Tensor, goal: Actor):
+        assert (
+            env_idx.numel() == self.num_envs
+        ), f"{self.__name__} should have nav in every env"
+        navigated_close = (
+            torch.norm(
+                goal.pose.p[env_idx, :2] - self.agent.base_link.pose.p[env_idx, :2],
+                dim=1,
+            )
+            <= self.navigate_cfg.navigated_successfully_dist
+        )
+
+        if self.merged_link is not None:
+            relative_pos_world = (
+                self.agent.base_link.pose.p[self.merged_link._scene_idxs]
+                - self.merged_link.pose.p
+            )
+
+            relative_pos_local = quaternion_apply(
+                quaternion_invert(self.merged_link.pose.q),
+                relative_pos_world,
+            )
+
+            navigated_close[self.merged_link._scene_idxs] &= (
+                (self.nav_merged_link_xrange[:, 0] <= relative_pos_local[:, 0])
+                & (relative_pos_local[:, 0] <= self.nav_merged_link_xrange[:, 1])
+                & (self.nav_merged_link_yrange[:, 0] <= relative_pos_local[:, 2])
+                & (relative_pos_local[:, 2] <= self.nav_merged_link_yrange[:, 1])
+            )
+
+        return navigated_close
+
     def _is_grasping_partial_env_obj(
         self, obj: Actor, env_idx, min_force=0.5, max_angle=85
     ):
@@ -463,12 +521,12 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                     should_grasp = torch.zeros(self.num_envs, dtype=torch.bool)
                     should_grasp[obj._scene_idxs] = True
                     begin_navigating[should_grasp & ~info["is_grasped"]] = False
-                    info["should_grasp"] = should_grasp
+                    # info["should_grasp"] = should_grasp
                 else:
                     begin_navigating[~info["is_grasped"]] = False
             begin_navigating_rew = 2 * begin_navigating
             reward += begin_navigating_rew
-            info["begin_navigating_rew"] = 2 * begin_navigating
+            # info["begin_navigating_rew"] = 2 * begin_navigating
 
             if torch.any(begin_navigating):
                 done_moving = info["oriented_correctly"] & info["navigated_close"]

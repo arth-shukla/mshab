@@ -776,7 +776,7 @@ def gen_navigate_task_plans(scene_builder):
                     TaskPlan(
                         subtasks=[
                             NavigateSubtask(
-                                goal_pos=obj_pos,
+                                articulation_config=target_articulation_config,
                             )
                         ],
                         build_config_name=build_config_name,

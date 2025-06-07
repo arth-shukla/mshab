@@ -1109,6 +1109,18 @@ class SequentialTaskEnv(SceneManipulationEnv):
             subtask_checkers,
         )
 
+    def _is_grasping_partial_env_obj(obj, env_idx, max_angle=85):
+        raise NotImplementedError()
+
+    def _is_navigated_close(self, env_idx: torch.Tensor, goal: Actor):
+        return (
+            torch.norm(
+                goal.pose.p[env_idx, :2] - self.agent.base_link.pose.p[env_idx, :2],
+                dim=1,
+            )
+            <= self.navigate_cfg.navigated_successfully_dist
+        )
+
     def _navigate_check_success(
         self,
         obj: Optional[Actor],
@@ -1132,13 +1144,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
             torch.abs(rots) <= self.navigate_cfg.navigated_successfully_rot
         )
 
-        navigated_close = (
-            torch.norm(
-                goal.pose.p[env_idx, :2] - self.agent.base_link.pose.p[env_idx, :2],
-                dim=1,
-            )
-            <= self.navigate_cfg.navigated_successfully_dist
-        )
+        navigated_close = self._is_navigated_close(env_idx, goal)
 
         cumulative_force_within_limit = (
             self.robot_cumulative_force[env_idx]
