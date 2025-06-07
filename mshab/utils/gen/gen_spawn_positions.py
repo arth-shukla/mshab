@@ -962,8 +962,11 @@ def gen_navigate_spawn_data(
 
         if args.task == "set_table":
             subtask_articulation = None
-            # NOTE (arth): remove_obj_id <=> need to open articulation
-            if subtask.remove_obj_id is not None:
+            # NOTE (arth): for set table:
+            #       obj_id is None && remove_obj_id is None -> nav to open subtask, leave articulation closed
+            #       obj_id is not None -> nav to Place (after Picking from open articulation)
+            #       remove_obj_id is not None -> nav to close subtask
+            if subtask.obj_id is not None or subtask.remove_obj_id is not None:
                 subtask_articulation = scene_builder.articulations[
                     f"env-0_{subtask.articulation_config.articulation_id}"
                 ]
