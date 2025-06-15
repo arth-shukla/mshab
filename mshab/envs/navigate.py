@@ -53,6 +53,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         robot_uids="fetch",
         task_plans: List[TaskPlan] = [],
         dist_fn: Literal["euclidean", "geodesic"] = "geodesic",
+        use_rot_rew: bool = True,
         **kwargs,
     ):
 
@@ -63,6 +64,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
 
         self.subtask_cfg = self.navigate_cfg
         self.use_geodesic = dist_fn == "geodesic"
+        self.use_rot_rew = use_rot_rew
 
         super().__init__(*args, robot_uids=robot_uids, task_plans=task_plans, **kwargs)
 
@@ -563,22 +565,23 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 # when done nav, give full from still_nav + 2
                 reward[done_navigating] += 12
 
-                # when done nav, orient towards obj
-                done_navigating_not_oriented = (
-                    info["navigated_close"] & ~info["oriented_correctly"]
-                )
-                goal_pose_wrt_base = (
-                    self.agent.base_link.pose[done_navigating_not_oriented].inv()
-                    * self.subtask_goals[-1].pose[done_navigating_not_oriented]
-                )
-                targ = goal_pose_wrt_base.p[..., :2]
-                uc_targ = targ / torch.norm(targ, dim=1).unsqueeze(-1).expand(
-                    *targ.shape
-                )
-                rots = torch.sign(uc_targ[..., 1]) * torch.arccos(uc_targ[..., 0])
-                oriented_correctly_rew = 2 * (1 - torch.tanh(torch.abs(rots) / 2))
-                reward[done_navigating_not_oriented] += oriented_correctly_rew
-                reward[done_moving] += 2
+                if self.use_rot_rew:
+                    # when done nav, orient towards obj
+                    done_navigating_not_oriented = (
+                        info["navigated_close"] & ~info["oriented_correctly"]
+                    )
+                    goal_pose_wrt_base = (
+                        self.agent.base_link.pose[done_navigating_not_oriented].inv()
+                        * self.subtask_goals[-1].pose[done_navigating_not_oriented]
+                    )
+                    targ = goal_pose_wrt_base.p[..., :2]
+                    uc_targ = targ / torch.norm(targ, dim=1).unsqueeze(-1).expand(
+                        *targ.shape
+                    )
+                    rots = torch.sign(uc_targ[..., 1]) * torch.arccos(uc_targ[..., 0])
+                    oriented_correctly_rew = 2 * (1 - torch.tanh(torch.abs(rots) / 2))
+                    reward[done_navigating_not_oriented] += oriented_correctly_rew
+                    reward[done_moving] += 2
 
                 # stop moving base when done
                 bqvel = torch.norm(self.agent.robot.qvel[done_moving, :3], dim=1)
@@ -598,13 +601,13 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 # x[still_navigating] = still_navigating_vel_rew
                 # info["still_moving_vel_rew"] = x.clone()
 
-                x = torch.zeros_like(reward)
-                x[done_navigating_not_oriented] = rots
-                info["rots"] = x.clone()
+                # x = torch.zeros_like(reward)
+                # x[done_navigating_not_oriented] = rots
+                # info["rots"] = x.clone()
 
-                x = torch.zeros_like(reward)
-                x[done_navigating_not_oriented] = oriented_correctly_rew
-                info["oriented_correctly_rew"] = x.clone()
+                # x = torch.zeros_like(reward)
+                # x[done_navigating_not_oriented] = oriented_correctly_rew
+                # info["oriented_correctly_rew"] = x.clone()
 
                 # x = torch.zeros_like(reward)
                 # x[done_moving] = done_moving_vel_rew
@@ -649,7 +652,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        max_reward = 28.0
+        max_reward = 28.0 if self.use_rot_rew else 26.0
         return self.compute_dense_reward(obs=obs, action=action, info=info) / max_reward
 
     # -------------------------------------------------------------------------------------------------
