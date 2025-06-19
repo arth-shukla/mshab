@@ -1,6 +1,7 @@
 import json
 import random
 import sys
+import time
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -197,7 +198,7 @@ def eval(cfg: EvalConfig):
     torch.manual_seed(cfg.seed)
     torch.backends.cudnn.deterministic = True
 
-    # NOTE (arth): maybe require cuda since we only allow gpu sim anyways
+    # NOTE (arth): mps backend on macs not supported since some fns aren't implemented
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # -------------------------------------------------------------------------------------------------
@@ -214,6 +215,34 @@ def eval(cfg: EvalConfig):
     )
     uenv: SequentialTaskEnv = eval_envs.unwrapped
     eval_obs, _ = eval_envs.reset()
+    if uenv.render_mode == "human":
+        viewer = uenv.render()
+        viewer.paused = True
+        uenv.render()
+
+        _original_after_simulation_step = uenv._after_simulation_step
+
+        def wrapped_after_simulation_step(self):
+            _original_after_simulation_step()
+
+            start_time = getattr(self, "_start_time", None)
+            if start_time is None:
+                self._start_time = time.time()
+
+            if self.gpu_sim_enabled:
+                self.scene._gpu_fetch_all()
+            self.render()
+
+            time.sleep(
+                max(
+                    0,
+                    (self.control_timestep / self._sim_steps_per_control)
+                    - (time.time() - self._start_time),
+                )
+            )
+            self._start_time = time.time()
+
+        uenv._after_simulation_step = wrapped_after_simulation_step.__get__(uenv)
 
     # -------------------------------------------------------------------------------------------------
     # SPACES

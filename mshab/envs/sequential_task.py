@@ -1480,8 +1480,19 @@ class SequentialTaskEnv(SceneManipulationEnv):
 
     @property
     def _default_human_render_camera_configs(self):
+        if self.render_mode == "human":
+            room_camera_config = CameraConfig(
+                "render_camera",
+                sapien_utils.look_at([4, 0, 2.5], [0, -3, 0]),
+                1920,
+                1080,
+                1,
+                0.01,
+                10,
+            )
+            return room_camera_config
         # this camera follows the robot around (though might be in walls if the space is cramped)
-        robot_camera_pose = sapien_utils.look_at([-0.2, 0.5, 1], ([0.2, -0.2, 0]))
+        robot_camera_pose = sapien_utils.look_at([-0.2, 0.5, 1], [0.2, -0.2, 0])
         robot_camera_config = CameraConfig(
             "render_camera",
             robot_camera_pose,

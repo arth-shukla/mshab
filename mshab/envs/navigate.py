@@ -54,6 +54,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         task_plans: List[TaskPlan] = [],
         dist_fn: Literal["euclidean", "geodesic"] = "geodesic",
         use_rot_rew: bool = True,
+        restrict_articulation_target_area: bool = True,
         **kwargs,
     ):
 
@@ -65,6 +66,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
         self.subtask_cfg = self.navigate_cfg
         self.use_geodesic = dist_fn == "geodesic"
         self.use_rot_rew = use_rot_rew
+        self.restrict_articulation_target_area = restrict_articulation_target_area
 
         super().__init__(*args, robot_uids=robot_uids, task_plans=task_plans, **kwargs)
 
@@ -459,7 +461,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             <= self.navigate_cfg.navigated_successfully_dist
         )
 
-        if self.merged_link is not None:
+        if self.merged_link is not None and self.restrict_articulation_target_area:
             relative_pos_world = (
                 self.agent.base_link.pose.p[self.merged_link._scene_idxs]
                 - self.merged_link.pose.p

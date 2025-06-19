@@ -6,8 +6,6 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-import sapien.physx as physx
-
 from mani_skill.envs.sapien_env import BaseEnv
 from mani_skill.utils import common
 from mani_skill.utils.common import flatten_state_dict
@@ -19,14 +17,11 @@ class FetchDepthObservationWrapper(gym.ObservationWrapper):
 
         self.cat_pixels = cat_pixels
         self.cat_state = cat_state
-        self._stack_fn = torch.stack if physx.is_gpu_enabled() else np.stack
-        self._cat_fn = torch.cat if physx.is_gpu_enabled() else np.concatenate
+        self._stack_fn = torch.stack
+        self._cat_fn = torch.cat
 
         self._base_env: BaseEnv = env.unwrapped
-        init_raw_obs = self._base_env._init_raw_obs
-
-        if physx.is_gpu_enabled():
-            init_raw_obs = common.to_tensor(self._base_env._init_raw_obs)
+        init_raw_obs = common.to_tensor(self._base_env._init_raw_obs)
 
         self._base_env.update_obs_space(common.to_numpy(self.observation(init_raw_obs)))
 
@@ -54,10 +49,10 @@ class FetchDepthObservationWrapper(gym.ObservationWrapper):
             dict(
                 state=self._cat_fn(
                     [
-                        flatten_state_dict(agent_obs, use_torch=physx.is_gpu_enabled()),
-                        flatten_state_dict(extra_obs, use_torch=physx.is_gpu_enabled()),
+                        flatten_state_dict(agent_obs, use_torch=True),
+                        flatten_state_dict(extra_obs, use_torch=True),
                     ],
-                    axis=int(physx.is_gpu_enabled()),
+                    axis=1,
                 ),
                 **depth_pixels,
             )
@@ -93,12 +88,8 @@ class FrameStack(gym.Wrapper):
         self._stack_dim = dict()
         for sk in self._stacking_keys:
             obs_space = self.observation_space.spaces[sk]
-            if physx.is_gpu_enabled():
-                init_raw_obs_sk_replace = init_raw_obs.pop(sk)[:, None, ...]
-                stack_dim = -len(obs_space.shape[1:]) - 1
-            else:
-                init_raw_obs_sk_replace = init_raw_obs.pop(sk)[None, ...]
-                stack_dim = -len(obs_space.shape) - 1
+            init_raw_obs_sk_replace = init_raw_obs.pop(sk)[:, None, ...]
+            stack_dim = -len(obs_space.shape[1:]) - 1
 
             pixel_init_raw_obs[sk] = np.repeat(
                 init_raw_obs_sk_replace, num_stack, axis=stack_dim
@@ -108,7 +99,7 @@ class FrameStack(gym.Wrapper):
         init_raw_obs["pixels"] = pixel_init_raw_obs
         self._base_env.update_obs_space(init_raw_obs)
 
-        self._stack_fn = torch.stack if physx.is_gpu_enabled() else np.stack
+        self._stack_fn = torch.stack
 
     def _get_stacked_frames(self):
         return dict(
@@ -160,12 +151,8 @@ class StackedDictObservationWrapper(gym.Wrapper):
         self._stack_dim = dict()
         for sk in self._stacking_keys:
             obs_space = self.observation_space.spaces[sk]
-            if physx.is_gpu_enabled():
-                init_raw_obs_sk_replace = init_raw_obs.pop(sk)[:, None, ...]
-                stack_dim = -len(obs_space.shape[1:]) - 1
-            else:
-                init_raw_obs_sk_replace = init_raw_obs.pop(sk)[None, ...]
-                stack_dim = -len(obs_space.shape) - 1
+            init_raw_obs_sk_replace = init_raw_obs.pop(sk)[:, None, ...]
+            stack_dim = -len(obs_space.shape[1:]) - 1
 
             stacked_init_raw_obs[sk] = np.repeat(
                 init_raw_obs_sk_replace, num_stack, axis=stack_dim
@@ -175,7 +162,7 @@ class StackedDictObservationWrapper(gym.Wrapper):
         init_raw_obs.update(**stacked_init_raw_obs)
         self._base_env.update_obs_space(init_raw_obs)
 
-        self._stack_fn = torch.stack if physx.is_gpu_enabled() else np.stack
+        self._stack_fn = torch.stack
 
     def _get_stacked_obs(self):
         return dict(
