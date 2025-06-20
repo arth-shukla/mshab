@@ -19,6 +19,7 @@ import torch
 # ManiSkill specific imports
 import mani_skill.envs
 from mani_skill import ASSET_DIR
+from mani_skill import logger as ms_logger
 from mani_skill.utils import common
 
 from mshab.agents.bc import Agent as BCAgent
@@ -214,34 +215,55 @@ def eval(cfg: EvalConfig):
         video_path=logger.eval_video_path,
     )
     uenv: SequentialTaskEnv = eval_envs.unwrapped
-    eval_obs, _ = eval_envs.reset()
+    eval_obs, _ = eval_envs.reset(seed=cfg.seed, options=dict(reconfigure=True))
     if uenv.render_mode == "human":
         viewer = uenv.render()
         viewer.paused = True
         uenv.render()
 
+        _original_after_control_step = uenv._after_control_step
         _original_after_simulation_step = uenv._after_simulation_step
+
+        time_per_sim_step = uenv.control_timestep / uenv._sim_steps_per_control
+
+        def wrapped_after_control_step(self):
+            _original_after_control_step()
+
+            # self._realtime_drift += time.time() - self._control_step_end_time
+            # if abs(self._realtime_drift) > 1e-3:
+            #     ms_logger.warning(
+            #         f"Approx _step_action realtime drift of {self._realtime_drift}"
+            #     )
+
+            self._control_step_start_time = time.time()
+            self._cur_sim_step = 0
+            self._control_step_end_time = (
+                self._control_step_start_time + self.control_timestep
+            )
 
         def wrapped_after_simulation_step(self):
             _original_after_simulation_step()
-
-            start_time = getattr(self, "_start_time", None)
-            if start_time is None:
-                self._start_time = time.time()
-
-            if self.gpu_sim_enabled:
-                self.scene._gpu_fetch_all()
-            self.render()
-
-            time.sleep(
-                max(
-                    0,
-                    (self.control_timestep / self._sim_steps_per_control)
-                    - (time.time() - self._start_time),
+            if getattr(self, "_control_step_start_time", None) is None:
+                self._control_step_start_time = time.time()
+                self._cur_sim_step = 0
+                self._control_step_end_time = (
+                    self._control_step_start_time + self.control_timestep
                 )
-            )
-            self._start_time = time.time()
+                self._realtime_drift = 0
 
+            step_end_time = self._control_step_start_time + (
+                time_per_sim_step * (self._cur_sim_step + 1)
+            )
+            if time.time() < step_end_time:
+                if self.gpu_sim_enabled:
+                    self.scene._gpu_fetch_all()
+                self.render()
+                sleep_time = step_end_time - time.time()
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+            self._cur_sim_step += 1
+
+        uenv._after_control_step = wrapped_after_control_step.__get__(uenv)
         uenv._after_simulation_step = wrapped_after_simulation_step.__get__(uenv)
 
     # -------------------------------------------------------------------------------------------------

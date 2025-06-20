@@ -115,7 +115,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
         robot_uids="fetch",
         task_plans: List[TaskPlan] = [],
         require_build_configs_repeated_equally_across_envs=True,
+        randomize_build_configs_per_env=False,
         add_event_tracker_info=False,
+        invisible_goals_in_human_render=False,
         task_cfgs=dict(),
         **kwargs,
     ):
@@ -141,10 +143,16 @@ class SequentialTaskEnv(SceneManipulationEnv):
             ]
         ), "All parallel task plans must have same subtask types in same order"
 
+        if randomize_build_configs_per_env:
+            assert (
+                not require_build_configs_repeated_equally_across_envs
+            ), f"Received {randomize_build_configs_per_env=} but cannot randomize build configs per env with {require_build_configs_repeated_equally_across_envs=}"
         self._require_build_configs_repeated_equally_across_envs = (
             require_build_configs_repeated_equally_across_envs
         )
+        self._randomize_build_configs_per_env = randomize_build_configs_per_env
         self._add_event_tracker_info = add_event_tracker_info
+        self._invisible_goals_in_human_render = invisible_goals_in_human_render
 
         self.base_task_plans = dict(
             (tuple([subtask.uid for subtask in tp.subtasks]), tp) for tp in task_plans
@@ -553,6 +561,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
         else:
             initial_pose = sapien.Pose()
 
+        if self._invisible_goals_in_human_render:
+            color[-1] = 0
+
         if goal_type == "sphere":
             goal = actors.build_sphere(
                 self.scene,
@@ -645,10 +656,18 @@ class SequentialTaskEnv(SceneManipulationEnv):
         # if num_bcis < self.num_envs, repeat bcis and truncate at self.num_envs
         self.build_config_idxs: List[int] = options.get(
             "build_config_idxs",
-            np.repeat(
-                sorted(list(self.build_config_idx_to_task_plans.keys())),
-                np.ceil(self.num_envs / num_bcis),
-            )[: self.num_envs].tolist(),
+            (
+                self._episode_rng.choice(
+                    list(self.build_config_idx_to_task_plans.keys()),
+                    size=self.num_envs,
+                    replace=True,
+                ).tolist()
+                if self._randomize_build_configs_per_env
+                else np.repeat(
+                    sorted(list(self.build_config_idx_to_task_plans.keys())),
+                    np.ceil(self.num_envs / num_bcis),
+                )[: self.num_envs].tolist()
+            ),
         )
         self.num_task_plans_per_bci = torch.tensor(
             [
@@ -1483,7 +1502,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
         if self.render_mode == "human":
             room_camera_config = CameraConfig(
                 "render_camera",
-                sapien_utils.look_at([4, 0, 2.5], [0, -3, 0]),
+                sapien_utils.look_at([4, -3.5, 3.5], [1.5, -3.5, 0]),
                 1920,
                 1080,
                 1,
