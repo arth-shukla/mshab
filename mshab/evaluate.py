@@ -217,8 +217,6 @@ def eval(cfg: EvalConfig):
     uenv: SequentialTaskEnv = eval_envs.unwrapped
     eval_obs, _ = eval_envs.reset(seed=cfg.seed, options=dict(reconfigure=True))
     if uenv.render_mode == "human":
-        viewer = uenv.render()
-        viewer.paused = True
         uenv.render()
 
         _original_after_control_step = uenv._after_control_step
