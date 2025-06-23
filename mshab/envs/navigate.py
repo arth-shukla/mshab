@@ -449,7 +449,7 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
                 dim=1,
             )
 
-    def _is_navigated_close(self, env_idx: torch.Tensor, goal: Actor):
+    def _is_navigated_close(self, env_idx: torch.Tensor, goal: Actor, _):
         assert (
             env_idx.numel() == self.num_envs
         ), f"{self.__name__} should have nav in every env"

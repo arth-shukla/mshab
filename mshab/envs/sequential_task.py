@@ -14,12 +14,18 @@ from mani_skill.envs.scenes.base_env import SceneManipulationEnv
 from mani_skill.sensors.camera import CameraConfig
 from mani_skill.utils import common, sapien_utils
 from mani_skill.utils.building import actors
+from mani_skill.utils.geometry.rotation_conversions import (
+    quaternion_apply,
+    quaternion_invert,
+)
 from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs import Actor, Articulation, Pose
+from mani_skill.utils.structs.link import Link
 from mani_skill.utils.structs.pose import vectorize_pose
 from mani_skill.utils.structs.types import GPUMemoryConfig, SimConfig
 
 from mshab.envs.planner import (
+    ArticulationConfig,
     CloseSubtask,
     CloseSubtaskConfig,
     NavigateSubtask,
@@ -459,6 +465,12 @@ class SequentialTaskEnv(SceneManipulationEnv):
                         subtask_articulation.links[subtask.articulation_handle_link_idx]
                         if subtask.articulation_type == "kitchen_counter"
                         else subtask_articulation
+                    )
+                    last_subtask.articulation_config = ArticulationConfig(
+                        articulation_id=subtask.articulation_id,
+                        articulation_type=subtask.articulation_type,
+                        articulation_handle_link_idx=subtask.articulation_handle_link_idx,
+                        articulation_handle_active_joint_idx=subtask.articulation_handle_active_joint_idx,
                     )
             last_subtask = subtask
 
@@ -926,6 +938,11 @@ class SequentialTaskEnv(SceneManipulationEnv):
                 ) = self._navigate_check_success(
                     self.subtask_objs[subtask_num],
                     self.subtask_goals[subtask_num],
+                    (
+                        subtask.articulation_config.articulation_type
+                        if subtask.articulation_config is not None
+                        else None
+                    ),
                     env_idx,
                 )
             elif isinstance(subtask, OpenSubtask):
@@ -1131,8 +1148,13 @@ class SequentialTaskEnv(SceneManipulationEnv):
     def _is_grasping_partial_env_obj(obj, env_idx, max_angle=85):
         raise NotImplementedError()
 
-    def _is_navigated_close(self, env_idx: torch.Tensor, goal: Actor):
-        return (
+    def _is_navigated_close(
+        self,
+        env_idx: torch.Tensor,
+        goal: Actor,
+        articulation_type: Optional[str] = None,
+    ):
+        navigated_close = (
             torch.norm(
                 goal.pose.p[env_idx, :2] - self.agent.base_link.pose.p[env_idx, :2],
                 dim=1,
@@ -1140,10 +1162,38 @@ class SequentialTaskEnv(SceneManipulationEnv):
             <= self.navigate_cfg.navigated_successfully_dist
         )
 
+        if isinstance(goal, Articulation) or isinstance(goal, Link):
+            # NOTE (arth): assume nav to same articulation, since we check each parallel subtask at a time
+            relative_pos_world = (
+                self.agent.base_link.pose.p[env_idx] - goal.pose.p[env_idx]
+            )
+
+            relative_pos_local = quaternion_apply(
+                quaternion_invert(goal.pose.q),
+                relative_pos_world,
+            )
+
+            xrange = dict(fridge=[0.933, 1.833], kitchen_counter=[0.3, 1.5])[
+                articulation_type
+            ]
+            yrange = dict(fridge=[-0.6, 0.6], kitchen_counter=[-0.6, 0.6])[
+                articulation_type
+            ]
+
+            navigated_close &= (
+                (xrange[0] <= relative_pos_local[:, 0])
+                & (relative_pos_local[:, 0] <= xrange[1])
+                & (yrange[0] <= relative_pos_local[:, 2])
+                & (relative_pos_local[:, 2] <= yrange[1])
+            )
+
+        return navigated_close
+
     def _navigate_check_success(
         self,
-        obj: Optional[Actor],
+        obj: Union[Actor, None],
         goal: Actor,
+        articulation_type: str,
         env_idx: torch.Tensor,
     ):
         if obj is None:
@@ -1163,7 +1213,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
             torch.abs(rots) <= self.navigate_cfg.navigated_successfully_rot
         )
 
-        navigated_close = self._is_navigated_close(env_idx, goal)
+        navigated_close = self._is_navigated_close(env_idx, goal, articulation_type)
 
         cumulative_force_within_limit = (
             self.robot_cumulative_force[env_idx]
