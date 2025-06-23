@@ -274,7 +274,9 @@ class NavigateSubtaskTrainEnv(SubtaskTrainEnv):
             if subtask.articulation_config is not None:
                 art_sis.append(i)
                 art_ids.append(subtask.articulation_config.articulation_id)
-            if subtask.goal_pos is None:
+            if subtask.goal_pos is None or (
+                subtask.obj_id is None and subtask.articulation_config is not None
+            ):
                 assert subtask.articulation_config is not None
                 replace_goal_with_link_sis.append(i)
                 replace_goal_with_link_ids_num.append(

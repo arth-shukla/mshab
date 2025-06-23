@@ -979,6 +979,12 @@ def gen_navigate_spawn_data(
                         f"{subtask.articulation_config.articulation_type=} not supported"
                     )
             spawn_articulation_qpos = []
+        elif args.task == "prepare_groceries":
+            spawn_lookat = (
+                subtask_obj.pose.p
+                if subtask_obj is not None
+                else torch.tensor([[-1, 0, 0.02]])
+            )
 
         spawn_pos, spawn_qpos = [], []
         spawn_obj_raw_pose_wrt_tcp = []
@@ -1035,8 +1041,31 @@ def gen_navigate_spawn_data(
                     ] = rand_joint_qpos
                     subtask_articulation.set_qpos(new_subtask_articulation_qpos)
 
-            # NOTE (arth): for nav, we spawn all over the apartment
-            new_navigable_positions = navigable_positions
+            if args.task == "prepare_groceries":
+                # NOTE (arth): since the robot stays in the kitchen during prepare_groceries, we constrain spawn positions
+                positions_wrt_centers = navigable_positions - spawn_lookat[:, :2]
+                dists = torch.norm(positions_wrt_centers, dim=-1)
+
+                new_navigable_positions = navigable_positions[
+                    dists < args.spawn_loc_radius
+                ]
+                positions_wrt_centers = positions_wrt_centers[
+                    dists < args.spawn_loc_radius
+                ]
+                dists = dists[dists < args.spawn_loc_radius]
+                if subtask_obj is None:
+                    # NOTE (arth): if init at default start pose, just add some rot noise
+                    rots = torch.rand_like(positions_wrt_centers[..., 1]) * 2 * torch.pi
+                else:
+                    rots = (
+                        torch.sign(positions_wrt_centers[..., 1])
+                        * torch.arccos(positions_wrt_centers[..., 0] / dists)
+                        + torch.pi
+                    ) % (2 * torch.pi)
+            else:
+                # NOTE (arth): for nav tidy_house and set_table, we spawn all over the apartment
+                new_navigable_positions = navigable_positions
+                rots = None
 
             # spawn to try
             spawn_num = torch.randint(
@@ -1054,7 +1083,10 @@ def gen_navigate_spawn_data(
             env.agent.robot.set_pose(Pose.create_from_pq(p=robot_pos))
 
             # base rot
-            rot = torch.rand((1,)) * 2 * torch.pi
+            if rots is None:
+                rot = torch.rand((1,)) * 2 * torch.pi
+            else:
+                rot = rots[spawn_num]
             qpos[:, 2] = rot
             qpos[:, 2:3] += torch.clamp(
                 torch.normal(0, 0.25, qpos[:, 2:3].shape), -0.5, 0.5
