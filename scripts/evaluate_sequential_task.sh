@@ -6,7 +6,7 @@
 
 SEED=0
 
-TASK=tidy_house
+TASK=set_table
 SUBTASK=navigate
 SPLIT=train
 OBJ=all
@@ -49,21 +49,26 @@ if [[ $SUBTASK == "sequential" ]]; then
         ENV_ID="SequentialTask-v0"
 
         # num envs
-        if [[ $SPLIT == "train" ]]; then
-                NUM_ENVS=63
+        if [[ $record_video == "True" ]]; then
+                if [[ $SPLIT == "train" ]]; then
+                        NUM_ENVS=63
+                else
+                        NUM_ENVS=21
+                fi
         else
-                NUM_ENVS=21
+                NUM_ENVS=252
         fi
 
         # horizon
-        # NOTE (arth): we ignore steps needed for the navigate task since we teleport
-        # NOTE (arth): while we set max subtask steps to 200, really we don't need that many for overall horizon
+        # NOTE (arth): in practice, the actual max_episode_steps is often not needed for successful runs
+        #       but for truly fair evaluation, we must simulate the whole episode
+        #       if less-accurate evaluation is acceptable, set continuous_task=False and/or reduce max_episode_steps
         if [[ $TASK == "tidy_house" ]]; then
-                MAX_EPISODE_STEPS=1000
+                MAX_EPISODE_STEPS=$((200*10 + 500*10))
         elif [[ $TASK == "prepare_groceries" ]]; then
-                MAX_EPISODE_STEPS=600
+                MAX_EPISODE_STEPS=$((200*6 + 500*6))
         else
-                MAX_EPISODE_STEPS=800
+                MAX_EPISODE_STEPS=$((200*8 + 500*8))
         fi
 
         # extra args

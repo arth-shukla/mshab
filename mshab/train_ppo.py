@@ -158,6 +158,9 @@ class TrainConfig:
 def get_mshab_train_cfg(cfg: TrainConfig) -> TrainConfig:
     cfg.eval_env = {**cfg.env, **cfg.eval_env}
     cfg.eval_env.env_kwargs = {**cfg.env.env_kwargs, **cfg.eval_env.env_kwargs}
+    # NOTE (arth): odd OmageConf quirk where wandb_id=null -> wandb_id=True
+    if isinstance(cfg.wandb_id, bool):
+        cfg.wandb_id = None
     cfg = from_dict(data_class=TrainConfig, data=OmegaConf.to_container(cfg))
     return cfg
 

@@ -47,7 +47,8 @@ class EnvConfig:
     max_episode_steps: int
 
     make_env: bool = True
-    obs_mode: str = "rgbd"
+    # NOTE (arth): env supports rgbd, pointcloud, segmentation, etc per ManiSkill; we use depth for provided baselines
+    obs_mode: str = "depth"
     render_mode: str = "all"
     shader_dir: str = "minimal"
     sim_backend: str = "gpu"
