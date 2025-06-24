@@ -981,8 +981,8 @@ def gen_navigate_spawn_data(
             spawn_articulation_qpos = []
         elif args.task == "prepare_groceries":
             spawn_lookat = (
-                subtask_obj.pose.p
-                if subtask_obj is not None
+                subtask.prev_goal_pos
+                if subtask.prev_goal_pos is not None
                 else torch.tensor([[-1, 0, 0.02]])
             )
 

@@ -72,7 +72,9 @@ if [[ $SUBTASK == "sequential" ]]; then
         fi
 
         # extra args
-        extra_args=()
+        extra_args=(
+                "eval_env.env_kwargs.task_cfgs.navigate.ignore_arm_checkers=True"
+        )
 else
         
         # env id
@@ -161,4 +163,8 @@ SAPIEN_NO_DISPLAY=1 python -m mshab.evaluate configs/evaluate.yml \
         logger.exp_name="$EXP_NAME" \
         "${extra_args[@]}" 
         # NOTE (arth): one can set easier/harder task conditions as below
-        # eval_env.env_kwargs.task_cfgs="{pick: {robot_cumulative_force_limit: 100000000}, place: {goal_type: zone, robot_cumulative_force_limit: 100000000}, open: {robot_cumulative_force_limit: 100000000}, close: {robot_cumulative_force_limit: 100000000}}"
+        # eval_env.env_kwargs.task_cfgs.pick="{robot_cumulative_force_limit: 100000000}" \
+        # eval_env.env_kwargs.task_cfgs.place="{goal_type: zone, robot_cumulative_force_limit: 100000000}" \
+        # eval_env.env_kwargs.task_cfgs.navigate="{ignore_arm_checkers: True}" \
+        # eval_env.env_kwargs.task_cfgs.open="{robot_cumulative_force_limit: 100000000}" \
+        # eval_env.env_kwargs.task_cfgs.close="{robot_cumulative_force_limit: 100000000}"
