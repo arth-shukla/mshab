@@ -1169,7 +1169,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
             )
 
             relative_pos_local = quaternion_apply(
-                quaternion_invert(goal.pose.q),
+                quaternion_invert(goal.pose.q[env_idx]),
                 relative_pos_world,
             )
 
