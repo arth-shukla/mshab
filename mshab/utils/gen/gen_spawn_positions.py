@@ -980,10 +980,10 @@ def gen_navigate_spawn_data(
                     )
             spawn_articulation_qpos = []
         elif args.task == "prepare_groceries":
-            spawn_lookat = (
+            spawn_lookat = torch.tensor(
                 subtask.prev_goal_pos
                 if subtask.prev_goal_pos is not None
-                else torch.tensor([[-1, 0, 0.02]])
+                else [-1, 0, 0.02]
             )
 
         spawn_pos, spawn_qpos = [], []
@@ -1043,19 +1043,20 @@ def gen_navigate_spawn_data(
 
             if args.task == "prepare_groceries":
                 # NOTE (arth): since the robot stays in the kitchen during prepare_groceries, we constrain spawn positions
-                positions_wrt_centers = navigable_positions - spawn_lookat[:, :2]
+                _spawn_loc_radius = (
+                    0.5 if subtask.prev_goal_pos is None else args.spawn_loc_radius
+                )
+                positions_wrt_centers = navigable_positions - spawn_lookat[:2]
                 dists = torch.norm(positions_wrt_centers, dim=-1)
 
-                new_navigable_positions = navigable_positions[
-                    dists < args.spawn_loc_radius
-                ]
-                positions_wrt_centers = positions_wrt_centers[
-                    dists < args.spawn_loc_radius
-                ]
-                dists = dists[dists < args.spawn_loc_radius]
-                if subtask_obj is None:
+                new_navigable_positions = navigable_positions[dists < _spawn_loc_radius]
+                positions_wrt_centers = positions_wrt_centers[dists < _spawn_loc_radius]
+                dists = dists[dists < _spawn_loc_radius]
+                if subtask.prev_goal_pos is None:
                     # NOTE (arth): if init at default start pose, just add some rot noise
-                    rots = torch.rand_like(positions_wrt_centers[..., 1]) * 2 * torch.pi
+                    rots = (
+                        torch.rand_like(positions_wrt_centers[..., 1]) - 0.5
+                    ) * torch.pi
                 else:
                     rots = (
                         torch.sign(positions_wrt_centers[..., 1])
