@@ -1214,6 +1214,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
         )
 
         navigated_close = self._is_navigated_close(env_idx, goal, articulation_type)
+        is_static = self.agent.is_static(threshold=0.2, base_threshold=0.05)[env_idx]
 
         cumulative_force_within_limit = (
             self.robot_cumulative_force[env_idx]
@@ -1222,11 +1223,15 @@ class SequentialTaskEnv(SceneManipulationEnv):
 
         if self.navigate_cfg.ignore_arm_checkers:
             return (
-                oriented_correctly & navigated_close,
+                oriented_correctly
+                & navigated_close
+                & is_static
+                & cumulative_force_within_limit,
                 dict(
                     is_grasped=is_grasped,
                     oriented_correctly=oriented_correctly,
                     navigated_close=navigated_close,
+                    is_static=is_static,
                     cumulative_force_within_limit=cumulative_force_within_limit,
                 ),
             )
@@ -1267,7 +1272,6 @@ class SequentialTaskEnv(SceneManipulationEnv):
                     dim=1,
                 )
 
-        is_static = self.agent.is_static(threshold=0.2, base_threshold=0.05)[env_idx]
         navigate_success = (
             oriented_correctly & navigated_close & ee_rest & robot_rest & is_static
         )
