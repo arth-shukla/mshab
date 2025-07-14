@@ -16,6 +16,9 @@ Official repository for the ManiSkill-HAB project by
 
 ## Updates
 
+- 14-07-2025: Navigate baselines, training envs, and data generation have been added! Furthermore, long-horizon evaluation and data generation with navigation are added.
+   - `ReplicaCAD` and `ReplicaCADRearrange` need to be re-downloaded from ManiSkill (see [Setup and Installation Pt 1](#setup-and-installation)). If you downloaded the `rearrange-dataset`, make sure to move it ***outside*** of `$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset` before re-downloading `ReplicaCAD` and `ReplicaCADRearrange`, as this directory will be deleted during re-download.
+   - Navigation RL baselines can be downloaded from `arth-shukla/mshab_checkpoints`.
 - 20-02-2025: ManiSkill-HAB has been updated to support ManiSkill3 Beta 18, resulting in **60% less memory usage**!
    - In particular, for the benchmark in Fig. 2 of the paper, MS-HAB on Beta 18 uses only ~9.68GB vram, compared to nearly 24GB previously.
    - To update, please either remove and re-clone the `mshab` branch in ManiSkill3, or pull the latest changes from the `mshab` branch in ManiSkill3. Then, `pip install -e ManiSkill` again.
