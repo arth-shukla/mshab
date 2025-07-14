@@ -210,7 +210,7 @@ class RecordEpisodeSequentialTask(gym.Wrapper):
 
         assert demo_filter in ["success", "min_success_subtasks", "any"]
         if demo_filter == "min_success_subtasks":
-            assert self.min_success_subtasks is not None
+            assert min_success_subtasks is not None
         self.demo_filter = demo_filter
         self.min_success_subtasks = min_success_subtasks
 
