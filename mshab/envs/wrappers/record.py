@@ -19,6 +19,7 @@ from mani_skill.utils.visualization.misc import images_to_video, tile_images
 
 from mshab.envs import (
     CloseSubtaskTrainEnv,
+    NavigateSubtaskTrainEnv,
     OpenSubtaskTrainEnv,
     PickSubtaskTrainEnv,
     PlaceSubtaskTrainEnv,
@@ -217,11 +218,15 @@ class RecordEpisode(gym.Wrapper):
         self.label_episode = label_episode
         self.valid_episode_labels = valid_episode_labels
         if self.label_episode:
-            assert (
-                isinstance(self.base_env, PickSubtaskTrainEnv)
-                or isinstance(self.base_env, PlaceSubtaskTrainEnv)
-                or isinstance(self.base_env, OpenSubtaskTrainEnv)
-                or isinstance(self.base_env, CloseSubtaskTrainEnv)
+            assert isinstance(
+                self.base_env,
+                (
+                    PickSubtaskTrainEnv,
+                    PlaceSubtaskTrainEnv,
+                    NavigateSubtaskTrainEnv,
+                    OpenSubtaskTrainEnv,
+                    CloseSubtaskTrainEnv,
+                ),
             ), f"Episode labeling not available for {self.base_env.__class__.__name__}"
         self.max_trajectories = max_trajectories
 
