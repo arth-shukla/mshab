@@ -6,8 +6,8 @@
 
 SEED=0
 
-TASK=set_table
-SUBTASK=navigate
+TASK=tidy_house
+SUBTASK=pick
 SPLIT=train
 OBJ=all
 

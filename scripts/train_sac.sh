@@ -3,7 +3,7 @@
 SEED=0
 
 TASK=tidy_house
-SUBTASK=navigate
+SUBTASK=pick
 SPLIT=train
 OBJ=all
 

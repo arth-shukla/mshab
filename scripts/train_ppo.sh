@@ -3,7 +3,7 @@
 SEED=0
 
 TASK=tidy_house
-SUBTASK=navigate
+SUBTASK=pick
 SPLIT=train
 OBJ=all
 
@@ -72,7 +72,7 @@ args=(
     "env.env_kwargs.task_cfgs.navigate.horizon=$max_episode_steps"
     "eval_env.env_kwargs.task_cfgs.navigate.horizon=$max_episode_steps"
     "algo.num_steps=100"
-    "env.continuous_task=False"
+    "env.continuous_task=True"
     "env.record_video=False"
     "env.info_on_video=False"
     "eval_env.record_video=False"
