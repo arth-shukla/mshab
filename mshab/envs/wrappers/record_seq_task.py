@@ -516,10 +516,6 @@ class RecordEpisodeSequentialTask(gym.Wrapper):
                 continue
             flush_count += 1
             if save:
-                self._episode_id += 1
-                traj_id = "traj_{}".format(self._episode_id)
-                group = self._h5_file.create_group(traj_id, track_order=True)
-
                 ep_success = common.index_dict_array(
                     self._trajectory_buffer.success,
                     (
@@ -553,6 +549,10 @@ class RecordEpisodeSequentialTask(gym.Wrapper):
 
                 if ignore_empty_transition and end_ptr - start_ptr <= 1:
                     continue
+
+                self._episode_id += 1
+                traj_id = "traj_{}".format(self._episode_id)
+                group = self._h5_file.create_group(traj_id, track_order=True)
 
                 def recursive_add_to_h5py(
                     group: h5py.Group, data: Union[dict, Array], key
