@@ -150,20 +150,20 @@ class PlaceSubtaskConfig(SubtaskConfig):
 class NavigateSubtask(Subtask):
     obj_id: Optional[str] = None
     goal_pos: Optional[PointTuple] = None
-    connecting_subtask_uids: Optional[List[str]] = None
+    prev_goal_pos: Optional[PointTuple] = None
+    articulation_config: Optional[ArticulationConfig] = None
+    # NOTE (arth): see note in OpenSubtask
+    remove_obj_id: Optional[str] = None
 
     def __post_init__(self):
         self.type = "navigate"
         super().__post_init__()
-        if isinstance(self.goal_pos, str):
-            self.goal_pos = [float(coord) for coord in self.goal_pos.split(",")]
-        if self.connecting_subtask_uids is not None:
-            assert len(self.connecting_subtask_uids) == 2
 
 
 @dataclass
 class NavigateSubtaskConfig(SubtaskConfig):
     task_id: int = 2
+    horizon: int = 500
     navigated_successfully_dist: float = 2
     navigated_successfully_rot: float = 0.5
     ignore_arm_checkers: bool = False

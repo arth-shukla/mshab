@@ -1,4 +1,5 @@
 from .close import CloseSubtaskTrainEnv
+from .navigate import NavigateSubtaskTrainEnv
 from .open import OpenSubtaskTrainEnv
 from .pick import PickSubtaskTrainEnv
 from .place import PlaceSubtaskTrainEnv

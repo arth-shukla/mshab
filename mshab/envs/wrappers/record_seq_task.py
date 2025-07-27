@@ -2,7 +2,7 @@ import copy
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Literal, Optional, Union
 
 import h5py
 
@@ -11,23 +11,27 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from mani_skill import get_commit_info
-from mani_skill.utils import common, gym_utils
-from mani_skill.utils.io_utils import dump_json
-from mani_skill.utils.structs.types import Array
-from mani_skill.utils.visualization.misc import images_to_video, tile_images
+import sapien.physx as physx
 
-from mshab.envs import (
-    CloseSubtaskTrainEnv,
-    NavigateSubtaskTrainEnv,
-    OpenSubtaskTrainEnv,
-    PickSubtaskTrainEnv,
-    PlaceSubtaskTrainEnv,
-    SequentialTaskEnv,
+from mani_skill import get_commit_info
+from mani_skill.envs.sapien_env import BaseEnv
+from mani_skill.utils import common, gym_utils, sapien_utils
+from mani_skill.utils.io_utils import dump_json
+from mani_skill.utils.logging_utils import logger
+from mani_skill.utils.structs.types import Array
+from mani_skill.utils.visualization.misc import (
+    images_to_video,
+    put_info_on_image,
+    tile_images,
 )
+from mani_skill.utils.wrappers import CPUGymWrapper
+
+from mshab.envs import SequentialTaskEnv
 from mshab.utils.io import NoIndent, NoIndentSupportingJSONEncoder
-from mshab.utils.label_dataset import get_episode_label_and_events
-from mshab.utils.video import put_info_on_image
+
+
+# NOTE (stao): The code for record.py is quite messy and perhaps confusing as it is trying to support both recording on CPU and GPU seamlessly
+# and handle partial resets. It works but can be claned up a lot.
 
 
 def parse_env_info(env: gym.Env):
@@ -42,7 +46,6 @@ def parse_env_info(env: gym.Env):
         # gym>=0.22
         env_kwargs = env.spec.kwargs
     env_kwargs.pop("task_plans")
-    env_kwargs.pop("spawn_data_fp")
     return dict(
         env_id=env.spec.id,
         env_kwargs=env_kwargs,
@@ -99,23 +102,6 @@ def clean_trajectories(h5_file: h5py.File, json_dict: dict, prune_empty_action=T
     json_dict["episodes"] = new_json_episodes
 
 
-def chunks(l, n):
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
-
-
-def chunked_string_list(arr, name, chunk_size=10):
-    if isinstance(arr, np.number) and len(arr.shape) < 1:
-        arr = [arr]
-    strs = [",".join(c) for c in chunks([f"{x:.2f}" for x in arr], chunk_size)]
-    for i in range(len(strs)):
-        if i == 0:
-            strs[i] = f"{name}: " + strs[i]
-        else:
-            strs[i] = "    " + strs[i]
-    return strs
-
-
 @dataclass
 class Step:
     state: np.ndarray
@@ -133,7 +119,7 @@ class Step:
     fail: np.ndarray = None
 
 
-class RecordEpisode(gym.Wrapper):
+class RecordEpisodeSequentialTask(gym.Wrapper):
 
     def __init__(
         self,
@@ -149,10 +135,11 @@ class RecordEpisode(gym.Wrapper):
         clean_on_close: bool = True,
         record_reward: bool = True,
         record_env_state: bool = True,
-        label_episode: bool = False,
-        valid_episode_labels: Optional[str] = None,
         max_trajectories: Optional[int] = None,
+        demo_filter: Literal["success", "min_success_subtasks", "any"] = "any",
+        min_success_subtasks: Optional[int] = None,
         video_fps: int = 20,
+        render_substeps: bool = False,
         avoid_overwriting_video: bool = False,
         source_type: Optional[str] = None,
         source_desc: Optional[str] = None,
@@ -215,20 +202,44 @@ class RecordEpisode(gym.Wrapper):
         self.video_nrows = int(np.sqrt(self.unwrapped.num_envs))
         self._avoid_overwriting_video = avoid_overwriting_video
 
-        self.label_episode = label_episode
-        self.valid_episode_labels = valid_episode_labels
-        if self.label_episode:
-            assert isinstance(
-                self.base_env,
-                (
-                    PickSubtaskTrainEnv,
-                    PlaceSubtaskTrainEnv,
-                    NavigateSubtaskTrainEnv,
-                    OpenSubtaskTrainEnv,
-                    CloseSubtaskTrainEnv,
-                ),
-            ), f"Episode labeling not available for {self.base_env.__class__.__name__}"
+        assert isinstance(
+            self.base_env,
+            SequentialTaskEnv,
+        ), f"Episode labeling not available for {self.base_env.__class__.__name__}"
         self.max_trajectories = max_trajectories
+
+        assert demo_filter in ["success", "min_success_subtasks", "any"]
+        if demo_filter == "min_success_subtasks":
+            assert min_success_subtasks is not None
+        self.demo_filter = demo_filter
+        self.min_success_subtasks = min_success_subtasks
+
+        self._already_warned_about_state_dict_inconsistency = False
+
+        # check if wrapped env is already wrapped by a CPU gym wrapper
+        cur_env = self.env
+        self.cpu_wrapped_env = False
+        while cur_env is not None:
+            if isinstance(cur_env, CPUGymWrapper):
+                self.cpu_wrapped_env = True
+                break
+            if hasattr(cur_env, "env"):
+                cur_env = cur_env.env
+            else:
+                break
+
+        self.render_substeps = render_substeps
+        if self.render_substeps:
+            _original_after_simulation_step = self.base_env._after_simulation_step
+
+            def wrapped_after_simulation_step():
+                _original_after_simulation_step()
+                if self.save_video:
+                    if self.base_env.gpu_sim_enabled:
+                        self.base_env.scene._gpu_fetch_all()
+                    self.render_images.append(self.capture_image())
+
+            self.base_env._after_simulation_step = wrapped_after_simulation_step
 
     @property
     def num_envs(self):
@@ -257,55 +268,17 @@ class RecordEpisode(gym.Wrapper):
         else:
             return self._save_video
 
-    def capture_image(self, info=dict()):
-        images = common.to_numpy(self.env.render())
-
-        if self.info_on_video:
-            # add infos to images
-            current_info = common.to_numpy(info)
-
-            infos_per_env = [dict() for _ in range(self.base_env.num_envs)]
-            for k, v in current_info.items():
-                if isinstance(v, np.ndarray):
-                    for i in range(self.base_env.num_envs):
-                        infos_per_env[i][k] = v[i]
-
-            for i, (image, env_info) in enumerate(zip(images, infos_per_env)):
-                action = env_info.pop("action", [])
-                reward = env_info.pop("reward", -np.inf)
-
-                qpos = env_info.pop("qpos", [])
-                qvel = env_info.pop("qvel", [])
-
-                image_info = gym_utils.extract_scalars_from_info(env_info)
-                image_extras = [
-                    f"reward: {reward:.3f}",
-                    *chunked_string_list(action, "action", chunk_size=10),
-                    *chunked_string_list(qpos, "qpos", chunk_size=10),
-                    *chunked_string_list(qvel, "qvel", chunk_size=10),
-                ]
-                image = put_info_on_image(
-                    image,
-                    image_info,
-                    extras=image_extras,
-                    rgb=(0, 0, 0),
-                    font_thickness=2,
-                )
-                image = put_info_on_image(
-                    image,
-                    image_info,
-                    extras=image_extras,
-                    rgb=(0, 255, 0),
-                    font_thickness=1,
-                )
-                images[i] = image
-
-            if len(images.shape) > 3:
-                images = tile_images(images, nrows=self.video_nrows)
-            return images
-
+    def capture_image(self, infos=None):
         img = self.env.render()
         img = common.to_numpy(img)
+        if len(img.shape) == 3:
+            img = img[None]
+        if infos is not None:
+            for i in range(len(img)):
+                info_item = {
+                    k: v if np.size(v) == 1 else v[i] for k, v in infos.items()
+                }
+                img[i] = put_info_on_image(img[i], info_item)
         if len(img.shape) > 3:
             if len(img) == 1:
                 img = img[0]
@@ -341,11 +314,21 @@ class RecordEpisode(gym.Wrapper):
             self._trajectory_buffer = None
         if self.save_trajectory:
             state_dict = self.base_env.get_state_dict()
-            action = common.batch(self.single_action_space.sample())
+            action = common.batch(
+                self.env.get_wrapper_attr("single_action_space").sample()
+            )
             first_step_info = info.copy()
             first_step_info.pop("reconfigure")
+            # check if state_dict is consistent
+            if not sapien_utils.is_state_dict_consistent(state_dict):
+                self.record_env_state = False
+                if not self._already_warned_about_state_dict_inconsistency:
+                    logger.warn(
+                        f"State dictionary is not consistent, disabling recording of environment states for {self.env}"
+                    )
+                    self._already_warned_about_state_dict_inconsistency = True
             first_step = Step(
-                state=common.to_numpy(common.batch(state_dict)),
+                state=None,
                 observation=common.to_numpy(common.batch(obs)),
                 info=common.to_numpy(common.batch(first_step_info)),
                 # note first reward/action etc. are ignored when saving trajectories to disk
@@ -366,13 +349,13 @@ class RecordEpisode(gym.Wrapper):
                 fail=np.zeros((1, self.num_envs), dtype=bool),
                 env_episode_ptr=np.zeros((self.num_envs,), dtype=int),
             )
+            if self.record_env_state:
+                first_step.state = common.to_numpy(common.batch(state_dict))
             env_idx = np.arange(self.num_envs)
             if "env_idx" in options:
                 env_idx = common.to_numpy(options["env_idx"])
             if self._trajectory_buffer is None:
                 # Initialize trajectory buffer on the first episode based on given observation (which should be generated after all wrappers)
-                # NOTE (arth): actually, here we save *before* all wrappers since we want to have the dataset
-                #       give gt data which can be altered to mimic wrappers later
                 self._trajectory_buffer = first_step
             else:
 
@@ -383,6 +366,8 @@ class RecordEpisode(gym.Wrapper):
                         for k in x.keys():
                             recursive_replace(x[k], y[k])
 
+                # TODO (stao): how do we store states from GPU sim of tasks with objects not in every sub-scene?
+                # Maybe we shouldn't?
                 if self.record_env_state:
                     recursive_replace(self._trajectory_buffer.state, first_step.state)
                 recursive_replace(
@@ -405,7 +390,7 @@ class RecordEpisode(gym.Wrapper):
                     )
                 if self._trajectory_buffer.fail is not None:
                     recursive_replace(self._trajectory_buffer.fail, first_step.fail)
-        if "env_idx" in options:
+        if options is not None and "env_idx" in options:
             options["env_idx"] = common.to_numpy(options["env_idx"])
         self.last_reset_kwargs = copy.deepcopy(dict(options=options, **kwargs))
         if seed is not None:
@@ -472,19 +457,24 @@ class RecordEpisode(gym.Wrapper):
                 )
             else:
                 self._trajectory_buffer.fail = None
-            self._last_info = common.to_numpy(info)
 
         if self.save_video:
             self._video_steps += 1
-            image = self.capture_image(
-                dict(
-                    **info,
-                    action=common.to_numpy(action),
-                    reward=common.to_numpy(rew),
-                    qpos=common.to_numpy(self.base_env.agent.robot.qpos),
-                    qvel=common.to_numpy(self.base_env.agent.robot.qvel),
+            if self.info_on_video:
+                scalar_info = gym_utils.extract_scalars_from_info(
+                    common.to_numpy(info), batch_size=self.num_envs
                 )
-            )
+                scalar_info["reward"] = common.to_numpy(rew)
+                if np.size(scalar_info["reward"]) > 1:
+                    scalar_info["reward"] = [
+                        float(rew) for rew in scalar_info["reward"]
+                    ]
+                else:
+                    scalar_info["reward"] = float(scalar_info["reward"])
+                image = self.capture_image(scalar_info)
+            else:
+                image = self.capture_image()
+
             self.render_images.append(image)
             if (
                 self.max_steps_per_video is not None
@@ -526,79 +516,43 @@ class RecordEpisode(gym.Wrapper):
                 continue
             flush_count += 1
             if save:
-                episode_info = dict()
+                ep_success = common.index_dict_array(
+                    self._trajectory_buffer.success,
+                    (
+                        slice(start_ptr + 1, end_ptr),
+                        env_idx,
+                    ),
+                    inplace=False,
+                )
+                subtask_nums = common.index_dict_array(
+                    self._trajectory_buffer.info,
+                    (
+                        slice(start_ptr + 1, end_ptr),
+                        env_idx,
+                    ),
+                    inplace=False,
+                )["subtask"]
 
-                if self.label_episode:
-                    episode_label, episode_events, episode_events_verbose = (
-                        get_episode_label_and_events(
-                            self.base_env.task_cfgs,
-                            common.index_dict_array(
-                                self._trajectory_buffer.success,
-                                (
-                                    slice(start_ptr + 1, end_ptr),
-                                    env_idx,
-                                ),
-                                inplace=False,
-                            ),
-                            # NOTE (arth): we disclude reset infos for episode labeling
-                            common.index_dict_array(
-                                self._trajectory_buffer.info,
-                                (
-                                    slice(start_ptr + 1, end_ptr),
-                                    env_idx,
-                                ),
-                                inplace=False,
-                            ),
-                        )
-                    )
+                has_success = np.any(ep_success)
+                if self.demo_filter == "success" and not has_success:
+                    continue
+
+                if not has_success:
+                    num_success_subtasks = np.max(subtask_nums)
                     if (
-                        self.valid_episode_labels is not None
-                        and episode_label not in self.valid_episode_labels
+                        self.demo_filter == "min_success_subtasks"
+                        and num_success_subtasks < self.min_success_subtasks
                     ):
                         continue
-                    episode_info.update(
-                        label=episode_label,
-                        events=NoIndent(episode_events),
-                        events_verbose=NoIndent(episode_events_verbose),
-                    )
+
+                    end_ptr -= len(subtask_nums) - np.argmax(subtask_nums)
+
+                if ignore_empty_transition and end_ptr - start_ptr <= 1:
+                    continue
 
                 self._episode_id += 1
                 traj_id = "traj_{}".format(self._episode_id)
                 group = self._h5_file.create_group(traj_id, track_order=True)
-
-                episode_info = dict(
-                    episode_id=self._episode_id,
-                    episode_seed=NoIndent(self.base_env._episode_seed.tolist()),
-                    build_config_idx=self.base_env.build_config_idxs[env_idx],
-                    task_plan_idx=self.base_env.task_plan_idxs[env_idx].item(),
-                    init_config_idx=self.base_env.init_config_idxs[env_idx],
-                    spawn_selection_idx=self.base_env.spawn_selection_idxs[env_idx],
-                    control_mode=self.base_env.control_mode,
-                    elapsed_steps=end_ptr - start_ptr - 1,
-                    **episode_info,
-                )
-                if self.label_episode:
-                    base_tp_uid = self.base_env.task_plan[0].composite_subtask_uids[
-                        env_idx
-                    ]
-                    base_subtask = self.base_env.base_task_plans[
-                        (base_tp_uid,)
-                    ].subtasks[0]
-                    if getattr(base_subtask, "articulation_config", None) is not None:
-                        articulation_type = (
-                            base_subtask.articulation_config.articulation_type
-                        )
-                    elif getattr(base_subtask, "articulation_type", None) is not None:
-                        articulation_type = base_subtask.articulation_type
-                    else:
-                        articulation_type = None
-
-                    episode_info["articulation_type"] = articulation_type
-                if self.num_envs == 1:
-                    episode_info.update(reset_kwargs=self.last_reset_kwargs)
-                else:
-                    # NOTE: With multiple envs in GPU simulation, reset_kwargs do not make much sense
-                    episode_info.update(reset_kwargs=dict())
 
                 def recursive_add_to_h5py(
                     group: h5py.Group, data: Union[dict, Array], key
@@ -610,6 +564,7 @@ class RecordEpisode(gym.Wrapper):
                             recursive_add_to_h5py(subgrp, data[k], k)
                     else:
                         if key == "rgb":
+                            # NOTE(jigu): It is more efficient to use gzip than png for a sequence of images.
                             group.create_dataset(
                                 "rgb",
                                 data=data[start_ptr:end_ptr, env_idx],
@@ -618,6 +573,7 @@ class RecordEpisode(gym.Wrapper):
                                 compression_opts=5,
                             )
                         elif key == "depth":
+                            # NOTE (stao): By default now cameras in ManiSkill return depth values of type uint16 for numpy
                             group.create_dataset(
                                 key,
                                 data=data[start_ptr:end_ptr, env_idx],
@@ -646,32 +602,52 @@ class RecordEpisode(gym.Wrapper):
                         group, self._trajectory_buffer.observation, "obs"
                     )
                 elif isinstance(self._trajectory_buffer.observation, np.ndarray):
-                    group.create_dataset(
-                        "obs",
-                        data=self._trajectory_buffer.observation[
-                            start_ptr:end_ptr, env_idx
-                        ],
-                        dtype=self._trajectory_buffer.observation.dtype,
-                    )
+                    if self.cpu_wrapped_env:
+                        group.create_dataset(
+                            "obs",
+                            data=self._trajectory_buffer.observation[start_ptr:end_ptr],
+                            dtype=self._trajectory_buffer.observation.dtype,
+                        )
+                    else:
+                        group.create_dataset(
+                            "obs",
+                            data=self._trajectory_buffer.observation[
+                                start_ptr:end_ptr, env_idx
+                            ],
+                            dtype=self._trajectory_buffer.observation.dtype,
+                        )
                 else:
                     raise NotImplementedError(
                         f"RecordEpisode wrapper does not know how to handle observation data of type {type(self._trajectory_buffer.observation)}"
                     )
+                episode_info = dict(
+                    episode_id=self._episode_id,
+                    episode_seed=NoIndent(self.base_env._episode_seed.tolist()),
+                    build_config_idx=self.base_env.build_config_idxs[env_idx],
+                    task_plan_idx=self.base_env.task_plan_idxs[env_idx].item(),
+                    init_config_idx=self.base_env.init_config_idxs[env_idx],
+                    control_mode=self.base_env.control_mode,
+                    elapsed_steps=end_ptr - start_ptr - 1,
+                )
+                if self.num_envs == 1:
+                    episode_info.update(reset_kwargs=self.last_reset_kwargs)
+                else:
+                    # NOTE (stao): With multiple envs in GPU simulation, reset_kwargs do not make much sense
+                    episode_info.update(reset_kwargs=dict())
 
-                # NOTE (arth): we don't save info for now
-                # # NOTE (arth): infos also need special processing
-                # if isinstance(self._trajectory_buffer.info, dict):
-                #     recursive_add_to_h5py(group, self._trajectory_buffer.info, "info")
-                # elif isinstance(self._trajectory_buffer.info, np.ndarray):
-                #     group.create_dataset(
-                #         "info",
-                #         data=self._trajectory_buffer.info[start_ptr:end_ptr, env_idx],
-                #         dtype=self._trajectory_buffer.info.dtype,
-                #     )
-                # else:
-                #     raise NotImplementedError(
-                #         f"RecordEpisode wrapper does not know how to handle info data of type {type(self._trajectory_buffer.info)}"
-                #     )
+                # NOTE (arth): infos also need special processing
+                if isinstance(self._trajectory_buffer.info, dict):
+                    recursive_add_to_h5py(group, self._trajectory_buffer.info, "info")
+                elif isinstance(self._trajectory_buffer.info, np.ndarray):
+                    group.create_dataset(
+                        "info",
+                        data=self._trajectory_buffer.info[start_ptr:end_ptr, env_idx],
+                        dtype=self._trajectory_buffer.info.dtype,
+                    )
+                else:
+                    raise NotImplementedError(
+                        f"RecordEpisode wrapper does not know how to handle info data of type {type(self._trajectory_buffer.info)}"
+                    )
 
                 # slice some data to remove the first dummy frame.
                 actions = common.index_dict_array(
@@ -700,12 +676,7 @@ class RecordEpisode(gym.Wrapper):
                         dtype=bool,
                     )
                     episode_info.update(
-                        success_once=self._trajectory_buffer.success[
-                            start_ptr + 1 : end_ptr, env_idx
-                        ].any(),
-                        success_at_end=self._trajectory_buffer.success[
-                            end_ptr - 1, env_idx
-                        ],
+                        success=self._trajectory_buffer.success[end_ptr - 1, env_idx]
                     )
                 if self._trajectory_buffer.fail is not None:
                     group.create_dataset(
@@ -731,14 +702,13 @@ class RecordEpisode(gym.Wrapper):
                         dtype=np.float32,
                     )
 
-                self._json_data["episodes"].append(episode_info)
+                self._json_data["episodes"].append(common.to_numpy(episode_info))
                 dump_json(
                     self._json_path,
                     self._json_data,
                     encoder_cls=NoIndentSupportingJSONEncoder,
                     indent=2,
                 )
-
                 if verbose:
                     if flush_count == 1:
                         print(f"Recorded episode {self._episode_id}")

@@ -80,7 +80,7 @@ class SACConfig:
     """log frequency in terms of global_step"""
     save_freq: int = 100_000
     """save frequency in terms of global_step"""
-    eval_freq: int = 100_000
+    eval_freq: Optional[int] = 100_000
     """evaluation frequency in terms of global_step"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -572,32 +572,31 @@ def train(cfg: TrainConfig):
             timer.end(key="log")
 
         # Evaluation
-        if cfg.algo.eval_freq is not None:
-            if check_freq(cfg.algo.eval_freq):
-                agent.actor.eval()
-                agent.critic.eval()
-                eval_obs, _ = eval_envs.reset()  # don't seed here
+        if cfg.algo.eval_freq is not None and check_freq(cfg.algo.eval_freq):
+            agent.actor.eval()
+            agent.critic.eval()
+            eval_obs, _ = eval_envs.reset()  # don't seed here
 
-                for _ in range(eval_envs.max_episode_steps):
-                    with torch.no_grad():
-                        eval_pixel_obs, eval_state_obs = pixel_state_obs(
-                            eval_obs, tensor=True, to_device=True
-                        )
-                        action, _, _, _ = agent.actor(
-                            eval_pixel_obs,
-                            eval_state_obs,
-                            compute_pi=False,
-                            compute_log_pi=False,
-                        )
-                    eval_obs, _, _, _, _ = eval_envs.step(action)
+            for _ in range(eval_envs.max_episode_steps):
+                with torch.no_grad():
+                    eval_pixel_obs, eval_state_obs = pixel_state_obs(
+                        eval_obs, tensor=True, to_device=True
+                    )
+                    action, _, _, _ = agent.actor(
+                        eval_pixel_obs,
+                        eval_state_obs,
+                        compute_pi=False,
+                        compute_log_pi=False,
+                    )
+                eval_obs, _, _, _, _ = eval_envs.step(action)
 
-                agent.actor.train()
-                agent.critic.train()
+            agent.actor.train()
+            agent.critic.train()
 
-                if len(eval_envs.return_queue) > 0:
-                    store_env_stats("eval")
-                logger.log(global_step)
-                timer.end(key="eval")
+            if len(eval_envs.return_queue) > 0:
+                store_env_stats("eval")
+            logger.log(global_step)
+            timer.end(key="eval")
 
         # Checkpoint
         if check_freq(cfg.algo.save_freq):
@@ -611,7 +610,8 @@ def train(cfg: TrainConfig):
 
     # close everyhting once script is done running
     envs.close()
-    eval_envs.close()
+    if cfg.algo.eval_freq is not None:
+        eval_envs.close()
     logger.close()
 
 

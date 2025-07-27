@@ -25,6 +25,10 @@ def get_episode_label_and_events(
         return get_place_episode_label_and_events(
             task_cfgs["place"], ep_success, ep_infos
         )
+    if episode_type == 2:
+        return get_navigate_episode_label_and_events(
+            task_cfgs["navigate"], ep_success, ep_infos
+        )
     if episode_type == 3:
         return get_open_episode_label_and_events(
             task_cfgs["open"], ep_success, ep_infos
@@ -274,6 +278,87 @@ def get_place_episode_label_and_events(place_cfg, ep_success, ep_infos):
             # ):
             else:
                 label = "too_slow_failure"
+
+    return label, events, events_verbose
+
+
+def get_navigate_episode_label_and_events(navigate_cfg, ep_success, ep_infos):
+    success: np.ndarray = ep_success
+    is_grasped: np.ndarray = ep_infos["is_grasped"]
+    navigated_close: np.ndarray = ep_infos["navigated_close"]
+    robot_force: np.ndarray = ep_infos["robot_force"]
+    robot_cumulative_force: np.ndarray = ep_infos["robot_cumulative_force"]
+
+    events, events_verbose = [], []
+
+    def append_event(event_step, event):
+        if (len(events) == 0 or events[-1] != event) and event in [
+            "grasped",
+            "dropped",
+            "navigated_close",
+            "success",
+            "exceeded_cumulative_force_limit",
+        ]:
+            events.append(event)
+        if event == "collision":
+            if len(events_verbose) == 0 or events_verbose[-1][1] != "collision":
+                events_verbose.append(
+                    (
+                        [event_step],
+                        event,
+                        [round(robot_force[event_step].item(), 2)],
+                    )
+                )
+            else:
+                events_verbose[-1][0].append(event_step)
+                events_verbose[-1][2].append(round(robot_force[event_step].item(), 2))
+        else:
+            events_verbose.append((event_step, event, None))
+
+    for step, (spg, sg, sps, ss, spn, sn, srf, srcf) in enumerate(
+        zip(
+            [False] + is_grasped.tolist(),
+            is_grasped.tolist(),
+            [False] + success.tolist(),
+            success.tolist(),
+            [False] + navigated_close.tolist(),
+            navigated_close.tolist(),
+            robot_force.tolist(),
+            robot_cumulative_force.tolist(),
+        )
+    ):
+        if not spn and sn:
+            append_event(step, "navigated_close")
+        if spn and not sn:
+            append_event(step, "lost_navigated_close")
+        if not spg and sg:
+            append_event(step, "grasped")
+        if spg and not sg:
+            append_event(step, "dropped")
+        if not sps and ss:
+            append_event(step, "success")
+        if sps and not ss:
+            append_event(step, "lost_success")
+        if srf > 0:
+            append_event(step, "collision")
+        if srcf >= navigate_cfg.robot_cumulative_force_limit:
+            if "exceeded_cumulative_force_limit" not in events:
+                append_event(step, "exceeded_cumulative_force_limit")
+
+    if success.any():
+        if "exceeded_cumulative_force_limit" in events:
+            label = "success_then_excessive_collisions"
+        elif "dropped" in events:
+            label = "success_then_dropped"
+        else:
+            label = "navigation_success"
+    else:
+        if "exceeded_cumulative_force_limit" in events:
+            label = "excessive_collision_failure"
+        elif "dropped" in events:
+            label = "dropped_failure"
+        else:
+            label = "navigation_failure"
 
     return label, events, events_verbose
 

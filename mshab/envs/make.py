@@ -47,9 +47,11 @@ class EnvConfig:
     max_episode_steps: int
 
     make_env: bool = True
-    obs_mode: str = "rgbd"
+    # NOTE (arth): env supports rgbd, pointcloud, segmentation, etc per ManiSkill; we use depth for provided baselines
+    obs_mode: str = "depth"
     render_mode: str = "all"
     shader_dir: str = "minimal"
+    sim_backend: str = "gpu"
 
     continuous_task: bool = True
 
@@ -105,7 +107,7 @@ def make_env(
         shader_dir=env_cfg.shader_dir,
         robot_uids="fetch",
         num_envs=env_cfg.num_envs,
-        sim_backend="gpu",
+        sim_backend=env_cfg.sim_backend,
         **env_cfg.env_kwargs,
     )
 

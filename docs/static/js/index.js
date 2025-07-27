@@ -56,18 +56,15 @@ function updateTableShadows(table) {
 }
 
 const copyText = () => {
-	const text = `@article{shukla2024maniskillhab,
-	author		 = {Arth Shukla and Stone Tao and Hao Su},
-	title        = {ManiSkill-HAB: A Benchmark for Low-Level Manipulation in Home Rearrangement Tasks},
-	journal      = {CoRR},
-	volume       = {abs/2412.13211},
-	year         = {2024},
-	url          = {https://doi.org/10.48550/arXiv.2412.13211},
-	doi          = {10.48550/ARXIV.2412.13211},
-	eprinttype   = {arXiv},
-	eprint       = {2412.13211},
-	timestamp    = {Mon, 09 Dec 2024 01:29:24 +0100},
-	biburl       = {https://dblp.org/rec/journals/corr/abs-2412-13211.bib},
+	const text = `@inproceedings{shukla2025maniskillhab,
+	author       = {Arth Shukla and Stone Tao and Hao Su},
+	title        = {ManiSkill-HAB: {A} Benchmark for Low-Level Manipulation in Home Rearrangement Tasks},
+	booktitle    = {The Thirteenth International Conference on Learning Representations, {ICLR} 2025, Singapore, April 24-28, 2025},
+	publisher    = {OpenReview.net},
+	year         = {2025},
+	url          = {https://openreview.net/forum?id=6bKEWevgSd},
+	timestamp    = {Thu, 15 May 2025 17:19:05 +0200},
+	biburl       = {https://dblp.org/rec/conf/iclr/ShuklaTS25.bib},
 	bibsource    = {dblp computer science bibliography, https://dblp.org}
 }`;
 

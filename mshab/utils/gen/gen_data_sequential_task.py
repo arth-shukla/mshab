@@ -4,6 +4,7 @@ import sys
 import time
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, field
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,6 +20,7 @@ import torch
 # ManiSkill specific imports
 import mani_skill.envs
 from mani_skill import ASSET_DIR
+from mani_skill import logger as ms_logger
 from mani_skill.utils import common
 
 from mshab.agents.bc import Agent as BCAgent
@@ -27,6 +29,7 @@ from mshab.agents.ppo import Agent as PPOAgent
 from mshab.agents.sac import Agent as SACAgent
 from mshab.envs.make import EnvConfig, make_env
 from mshab.envs.planner import CloseSubtask, OpenSubtask, PickSubtask, PlaceSubtask
+from mshab.envs.wrappers.record_seq_task import RecordEpisodeSequentialTask
 from mshab.utils.array import recursive_slice, to_tensor
 from mshab.utils.config import parse_cfg
 from mshab.utils.logger import Logger, LoggerConfig
@@ -37,53 +40,6 @@ if TYPE_CHECKING:
     from mshab.envs import SequentialTaskEnv
 
 POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS = dict(
-    bc_placed_500=dict(
-        prepare_groceries=dict(
-            place=["all"],
-        ),
-    ),
-    bc_dropped_500=dict(
-        prepare_groceries=dict(
-            place=["all"],
-        ),
-    ),
-    bc_placed_dropped_500=dict(
-        prepare_groceries=dict(
-            place=["all"],
-        ),
-    ),
-    bc=dict(
-        tidy_house=dict(
-            pick=["all"],
-            place=["all"],
-        ),
-        prepare_groceries=dict(
-            pick=["all"],
-            place=["all"],
-        ),
-        set_table=dict(
-            pick=["all"],
-            place=["all"],
-            open=["fridge", "kitchen_counter"],
-            close=["fridge", "kitchen_counter"],
-        ),
-    ),
-    dp=dict(
-        tidy_house=dict(
-            pick=["all"],
-            place=["all"],
-        ),
-        prepare_groceries=dict(
-            pick=["all"],
-            place=["all"],
-        ),
-        set_table=dict(
-            pick=["all"],
-            place=["all"],
-            open=["fridge", "kitchen_counter"],
-            close=["fridge", "kitchen_counter"],
-        ),
-    ),
     rl=dict(
         tidy_house=dict(
             pick=[
@@ -149,49 +105,29 @@ POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS = dict(
     ),
 )
 
+NUM_ENVS = 189
+SEED = 2024
+MAX_TRAJECTORIES = 1000
 
-@dataclass
-class EvalConfig:
-    seed: int
-    task: str
-    eval_env: EnvConfig
-    logger: LoggerConfig
+DEMO_FILTER = "any"  # "any" | "success" | "min_success_subtasks"
+MIN_SUCCESS_SUBTASKS = None  # int if DEMO_FILTER == "min_success_subtasks"
 
-    policy_type: str = "rl_per_obj"
-    max_trajectories: int = 1000
-    save_trajectory: bool = False
+SAVE_TRAJECTORIES = True
+RECORD_VIDEO = False
+DEBUG_VIDEO_GEN = False
 
-    policy_key: str = field(init=False)
-
-    def __post_init__(self):
-        assert self.task in ["tidy_house", "prepare_groceries", "set_table"]
-        assert self.task in self.eval_env.task_plan_fp
-
-        assert self.policy_type in ["rl_all_obj", "rl_per_obj"] + list(
-            POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS.keys()
-        )
-        self.policy_key = (
-            self.policy_type.split("_")[0]
-            if "rl" in self.policy_type
-            else self.policy_type
-        )
-
-        self.logger.exp_cfg = asdict(self)
-        del self.logger.exp_cfg["logger"]["exp_cfg"]
+POLICY_TYPE = "rl_per_obj"
+POLICY_KEY = "rl"
 
 
-def get_mshab_train_cfg(cfg: EvalConfig) -> EvalConfig:
-    return from_dict(data_class=EvalConfig, data=OmegaConf.to_container(cfg))
-
-
-def eval(cfg: EvalConfig):
+def eval(task):
     # timer
     timer = NonOverlappingTimeProfiler()
 
     # seeding
-    random.seed(cfg.seed)
-    np.random.seed(cfg.seed)
-    torch.manual_seed(cfg.seed)
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
     torch.backends.cudnn.deterministic = True
 
     # NOTE (arth): mps backend on macs not supported since some fns aren't implemented
@@ -201,19 +137,72 @@ def eval(cfg: EvalConfig):
     # ENVS
     # -------------------------------------------------------------------------------------------------
 
+    eval_env_cfg = EnvConfig(
+        env_id="SequentialTask-v0",
+        num_envs=NUM_ENVS,
+        max_episode_steps=dict(
+            tidy_house=200 * 10 + 500 * 10,
+            prepare_groceries=200 * 6 + 500 * 6,
+            set_table=200 * 8 + 500 * 8,
+        )[task],
+        record_video=RECORD_VIDEO or DEBUG_VIDEO_GEN,
+        info_on_video=False,
+        debug_video=DEBUG_VIDEO_GEN,
+        debug_video_gen=DEBUG_VIDEO_GEN,
+        continuous_task=False,
+        cat_state=True,
+        cat_pixels=False,
+        task_plan_fp=(
+            ASSET_DIR
+            / f"scene_datasets/replica_cad_dataset/rearrange/task_plans/{task}/sequential/train/all.json"
+        ),
+    )
+    logger_cfg = LoggerConfig(
+        workspace="mshab_exps",
+        exp_name=(
+            f"gen_data_save_trajectories/{task}/sequential/train/all"
+            if SAVE_TRAJECTORIES
+            else f"gen_data/{task}/sequential/train/all"
+        ),
+        clear_out=False,
+        tensorboard=False,
+        wandb=False,
+        exp_cfg=dict(env_cfg=asdict(eval_env_cfg)),
+    )
     logger = Logger(
-        logger_cfg=cfg.logger,
+        logger_cfg=logger_cfg,
         save_fn=None,
     )
+    wrappers = []
+    if SAVE_TRAJECTORIES:
+        wrappers = [
+            partial(
+                RecordEpisodeSequentialTask,
+                output_dir=logger.exp_path,
+                save_trajectory=True,
+                save_video=False,
+                info_on_video=False,
+                save_on_reset=True,
+                save_video_trigger=None,
+                max_steps_per_video=None,
+                clean_on_close=True,
+                record_reward=True,
+                source_type="RL",
+                source_desc=f"Chained RL policies executing long-horizon {task} task.",
+                record_env_state=False,
+                max_trajectories=MAX_TRAJECTORIES,
+                demo_filter=DEMO_FILTER,
+                min_success_subtasks=MIN_SUCCESS_SUBTASKS,
+            )
+        ]
     eval_envs = make_env(
-        cfg.eval_env,
+        eval_env_cfg,
         video_path=logger.eval_video_path,
+        wrappers=wrappers,
     )
     uenv: SequentialTaskEnv = eval_envs.unwrapped
-    eval_obs, _ = eval_envs.reset(seed=cfg.seed, options=dict(reconfigure=True))
+    eval_obs, _ = eval_envs.reset(seed=SEED, options=dict(reconfigure=True))
     if uenv.render_mode == "human":
-        # from mani_skill import logger as ms_logger
-
         uenv.render()
 
         _original_after_control_step = uenv._after_control_step
@@ -331,41 +320,6 @@ def eval(cfg: EvalConfig):
                 compute_pi=False,
                 compute_log_pi=False,
             )[0]
-        elif algo_cfg.name == "bc":
-            policy = BCAgent(eval_obs, act_space.shape)
-            policy.eval()
-            policy.load_state_dict(
-                torch.load(algo_ckpt_path, map_location=device)["agent"]
-            )
-            policy.to(device)
-            policy_act_fn = lambda obs: policy(obs)
-        elif algo_cfg.name == "diffusion_policy":
-            assert cfg.eval_env.continuous_task
-            assert cfg.eval_env.stack is not None and cfg.eval_env.frame_stack is None
-            policy = DPAgent(
-                single_observation_space=obs_space,
-                single_action_space=act_space,
-                obs_horizon=algo_cfg.obs_horizon,
-                act_horizon=algo_cfg.act_horizon,
-                pred_horizon=algo_cfg.pred_horizon,
-                diffusion_step_embed_dim=algo_cfg.diffusion_step_embed_dim,
-                unet_dims=algo_cfg.unet_dims,
-                n_groups=algo_cfg.n_groups,
-                device=device,
-            )
-            policy.eval()
-            policy.load_state_dict(
-                torch.load(algo_ckpt_path, map_location=device)["agent"]
-            )
-            policy.to(device)
-
-            def get_dp_act(obs):
-                if len(dp_action_history) == 0:
-                    dp_action_history.extend(policy.get_action(obs).transpose(0, 1))
-
-                return dp_action_history.popleft()
-
-            policy_act_fn = get_dp_act
         else:
             raise NotImplementedError(f"algo {algo_cfg.name} not supported")
         policy_act_fn(to_tensor(eval_obs, device=device, dtype="float"))
@@ -376,23 +330,23 @@ def eval(cfg: EvalConfig):
         mshab_ckpt_dir = Path("mshab_checkpoints")
 
     policies = dict()
-    for subtask_name, subtask_targs in POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS[
-        cfg.policy_key
-    ][cfg.task].items():
+    for subtask_name, subtask_targs in POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS[POLICY_KEY][
+        task
+    ].items():
         policies[subtask_name] = dict()
         for targ_name in subtask_targs:
             cfg_path = (
                 mshab_ckpt_dir
-                / cfg.policy_key
-                / cfg.task
+                / POLICY_KEY
+                / task
                 / subtask_name
                 / targ_name
                 / "config.yml"
             )
             ckpt_path = (
                 mshab_ckpt_dir
-                / cfg.policy_key
-                / cfg.task
+                / POLICY_KEY
+                / task
                 / subtask_name
                 / targ_name
                 / "policy.pt"
@@ -452,7 +406,7 @@ def eval(cfg: EvalConfig):
 
                 # if policy_type == "rl_per_obj" or doing open/close env, need to query per-obj policy
                 if (
-                    cfg.policy_type == "rl_per_obj"
+                    POLICY_TYPE == "rl_per_obj"
                     or torch.any(open_env_idx)
                     or torch.any(close_env_idx)
                 ):
@@ -469,7 +423,7 @@ def eval(cfg: EvalConfig):
                 # query appropriate policy and place in action
                 def set_subtask_targ_policy_act(subtask_name, subtask_env_idx):
                     if (
-                        cfg.policy_type == "rl_per_obj"
+                        POLICY_TYPE == "rl_per_obj"
                         or subtask_name
                         in [
                             "open",
@@ -505,27 +459,25 @@ def eval(cfg: EvalConfig):
     # -------------------------------------------------------------------------------------------------
 
     task_targ_names = set()
-    for subtask_name in POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS["rl"][cfg.task]:
+    for subtask_name in POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS["rl"][task]:
         task_targ_names.update(
-            POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS["rl"][cfg.task][subtask_name]
+            POLICY_TYPE_TASK_SUBTASK_TO_TARG_IDS["rl"][task][subtask_name]
         )
 
-    eval_obs = to_tensor(
-        eval_envs.reset(seed=cfg.seed)[0], device=device, dtype="float"
-    )
+    eval_obs = to_tensor(eval_envs.reset(seed=SEED)[0], device=device, dtype="float")
     subtask_fail_counts = defaultdict(int)
     last_subtask_pointer = uenv.subtask_pointer.clone()
-    pbar = tqdm(range(cfg.max_trajectories), total=cfg.max_trajectories)
+    pbar = tqdm(range(MAX_TRAJECTORIES), total=MAX_TRAJECTORIES)
     step_num = 0
 
     def check_done():
-        if cfg.save_trajectory:
+        if SAVE_TRAJECTORIES:
             # NOTE (arth): eval_envs.env._env is bad, fix in wrappers instead (prob with get_attr func)
             return eval_envs.env._env.reached_max_trajectories
-        return len(eval_envs.return_queue) >= cfg.max_trajectories
+        return len(eval_envs.return_queue) >= MAX_TRAJECTORIES
 
     def update_pbar(step_num):
-        if cfg.save_trajectory:
+        if SAVE_TRAJECTORIES:
             diff = eval_envs.env._env.num_saved_trajectories - pbar.last_print_n
         else:
             diff = len(eval_envs.return_queue) - pbar.last_print_n
@@ -565,7 +517,7 @@ def eval(cfg: EvalConfig):
         )
         update_pbar(step_num)
         update_fail_subtask_counts(term | trunc)
-        if cfg.policy_key == "dp":
+        if POLICY_KEY == "dp":
             if torch.any(term | trunc):
                 dp_action_history.clear()
         step_num += 1
@@ -573,12 +525,6 @@ def eval(cfg: EvalConfig):
     # -------------------------------------------------------------------------------------------------
     # PRINT/SAVE RESULTS
     # -------------------------------------------------------------------------------------------------
-
-    if len(cfg.eval_env.extra_stat_keys):
-        torch.save(
-            eval_envs.extra_stats,
-            logger.exp_path / "eval_extra_stat_keys.pt",
-        )
 
     print(
         "subtask_fail_counts",
@@ -599,7 +545,7 @@ def eval(cfg: EvalConfig):
         .mean(),
         len=common.to_tensor(eval_envs.length_queue, device=device).float().mean(),
     )
-    time_logs = timer.get_time_logs(pbar.last_print_n * cfg.eval_env.max_episode_steps)
+    time_logs = timer.get_time_logs(pbar.last_print_n * eval_envs.max_episode_steps)
     print(
         "results",
         results_logs,
@@ -620,6 +566,6 @@ def eval(cfg: EvalConfig):
 
 
 if __name__ == "__main__":
-    PASSED_CONFIG_PATH = sys.argv[1]
-    cfg = get_mshab_train_cfg(parse_cfg(default_cfg_path=PASSED_CONFIG_PATH))
-    eval(cfg)
+    import sys
+
+    eval(task=sys.argv[1])

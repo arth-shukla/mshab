@@ -65,7 +65,7 @@ class PPOConfig:
     """log frequency in terms of global_step"""
     save_freq: int = 100_000
     """save frequency in terms of global_step"""
-    eval_freq: int = 100_000
+    eval_freq: Optional[int] = 100_000
     """evaluation frequency in terms of global_step"""
     finite_horizon_gae: bool = True
     torch_deterministic: bool = True
@@ -74,9 +74,10 @@ class PPOConfig:
     save_backup_ckpts: bool = False
     """whether to save separate ckpts eace save_freq which are not overwritten"""
 
-    # passed from env/eval_env cfg
-    num_steps: int = field(init=False)
+    num_steps: Optional[int] = None
     """the number of steps to run in each environment per policy rollout"""
+
+    # passed from env/eval_env cfg
     num_envs: int = field(init=False)
     """the number of parallel environments"""
     num_eval_envs: int = field(init=False)
@@ -144,7 +145,8 @@ class TrainConfig:
 
         self.algo.num_eval_envs = self.eval_env.num_envs
         self.algo.num_envs = self.env.num_envs
-        self.algo.num_steps = self.env.max_episode_steps
+        if self.algo.num_steps is None:
+            self.algo.num_steps = self.env.max_episode_steps
         self.algo._additional_processing()
 
         self.logger.exp_cfg = asdict(self)
@@ -156,6 +158,9 @@ class TrainConfig:
 def get_mshab_train_cfg(cfg: TrainConfig) -> TrainConfig:
     cfg.eval_env = {**cfg.env, **cfg.eval_env}
     cfg.eval_env.env_kwargs = {**cfg.env.env_kwargs, **cfg.eval_env.env_kwargs}
+    # NOTE (arth): odd OmageConf quirk where wandb_id=null -> wandb_id=True
+    if hasattr(cfg, "wandb_id") and isinstance(cfg.wandb_id, bool):
+        cfg.wandb_id = None
     cfg = from_dict(data_class=TrainConfig, data=OmegaConf.to_container(cfg))
     return cfg
 
@@ -176,10 +181,11 @@ def train(cfg: TrainConfig):
         video_path=cfg.logger.train_video_path,
     )
     print("making eval env", flush=True)
-    eval_envs = make_env(
-        cfg.eval_env,
-        video_path=cfg.logger.eval_video_path,
-    )
+    if cfg.algo.eval_freq:
+        eval_envs = make_env(
+            cfg.eval_env,
+            video_path=cfg.logger.eval_video_path,
+        )
     assert isinstance(
         envs.single_action_space, gym.spaces.Box
     ), "only continuous action space is supported"
@@ -318,7 +324,7 @@ def train(cfg: TrainConfig):
         # ---------------------------------------------------------------------------------------------
         # EVAL
         # ---------------------------------------------------------------------------------------------
-        if eval_envs is not None and check_freq(cfg.algo.eval_freq):
+        if cfg.algo.eval_freq and check_freq(cfg.algo.eval_freq):
             eval_envs.reset()
             for _ in range(eval_envs.max_episode_steps):
                 with torch.no_grad():
@@ -532,7 +538,8 @@ def train(cfg: TrainConfig):
 
     # close everyhting once script is done running
     envs.close()
-    eval_envs.close()
+    if cfg.algo.eval_freq:
+        eval_envs.close()
     logger.close()
 
 

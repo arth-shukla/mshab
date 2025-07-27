@@ -14,12 +14,18 @@ from mani_skill.envs.scenes.base_env import SceneManipulationEnv
 from mani_skill.sensors.camera import CameraConfig
 from mani_skill.utils import common, sapien_utils
 from mani_skill.utils.building import actors
+from mani_skill.utils.geometry.rotation_conversions import (
+    quaternion_apply,
+    quaternion_invert,
+)
 from mani_skill.utils.registration import register_env
 from mani_skill.utils.structs import Actor, Articulation, Pose
+from mani_skill.utils.structs.link import Link
 from mani_skill.utils.structs.pose import vectorize_pose
 from mani_skill.utils.structs.types import GPUMemoryConfig, SimConfig
 
 from mshab.envs.planner import (
+    ArticulationConfig,
     CloseSubtask,
     CloseSubtaskConfig,
     NavigateSubtask,
@@ -34,7 +40,12 @@ from mshab.envs.planner import (
     SubtaskConfig,
     TaskPlan,
 )
-from mshab.utils.array import all_equal, all_same_type, tensor_intersection
+from mshab.utils.array import (
+    all_equal,
+    all_same_type,
+    tensor_intersection,
+    tensor_intersection_idx,
+)
 
 
 UNIQUE_SUCCESS_SUBTASK_TYPE = 100
@@ -73,7 +84,7 @@ class SequentialTaskEnv(SceneManipulationEnv):
         ee_rest_thresh=0.05,
     )
     navigate_cfg = NavigateSubtaskConfig(
-        horizon=200,
+        horizon=500,
         ee_rest_thresh=0.05,
         navigated_successfully_dist=2,
     )
@@ -110,7 +121,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
         robot_uids="fetch",
         task_plans: List[TaskPlan] = [],
         require_build_configs_repeated_equally_across_envs=True,
+        randomize_build_configs_per_env=False,
         add_event_tracker_info=False,
+        invisible_goals_in_human_render=False,
         task_cfgs=dict(),
         **kwargs,
     ):
@@ -136,10 +149,16 @@ class SequentialTaskEnv(SceneManipulationEnv):
             ]
         ), "All parallel task plans must have same subtask types in same order"
 
+        if randomize_build_configs_per_env:
+            assert (
+                not require_build_configs_repeated_equally_across_envs
+            ), f"Received {randomize_build_configs_per_env=} but cannot randomize build configs per env with {require_build_configs_repeated_equally_across_envs=}"
         self._require_build_configs_repeated_equally_across_envs = (
             require_build_configs_repeated_equally_across_envs
         )
+        self._randomize_build_configs_per_env = randomize_build_configs_per_env
         self._add_event_tracker_info = add_event_tracker_info
+        self._invisible_goals_in_human_render = invisible_goals_in_human_render
 
         self.base_task_plans = dict(
             (tuple([subtask.uid for subtask in tp.subtasks]), tp) for tp in task_plans
@@ -447,6 +466,12 @@ class SequentialTaskEnv(SceneManipulationEnv):
                         if subtask.articulation_type == "kitchen_counter"
                         else subtask_articulation
                     )
+                    last_subtask.articulation_config = ArticulationConfig(
+                        articulation_id=subtask.articulation_id,
+                        articulation_type=subtask.articulation_type,
+                        articulation_handle_link_idx=subtask.articulation_handle_link_idx,
+                        articulation_handle_active_joint_idx=subtask.articulation_handle_active_joint_idx,
+                    )
             last_subtask = subtask
 
         assert len(self.subtask_objs) == len(self.task_plan)
@@ -548,6 +573,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
         else:
             initial_pose = sapien.Pose()
 
+        if self._invisible_goals_in_human_render:
+            color[-1] = 0
+
         if goal_type == "sphere":
             goal = actors.build_sphere(
                 self.scene,
@@ -640,10 +668,18 @@ class SequentialTaskEnv(SceneManipulationEnv):
         # if num_bcis < self.num_envs, repeat bcis and truncate at self.num_envs
         self.build_config_idxs: List[int] = options.get(
             "build_config_idxs",
-            np.repeat(
-                sorted(list(self.build_config_idx_to_task_plans.keys())),
-                np.ceil(self.num_envs / num_bcis),
-            )[: self.num_envs].tolist(),
+            (
+                self._episode_rng.choice(
+                    list(self.build_config_idx_to_task_plans.keys()),
+                    size=self.num_envs,
+                    replace=True,
+                ).tolist()
+                if self._randomize_build_configs_per_env
+                else np.repeat(
+                    sorted(list(self.build_config_idx_to_task_plans.keys())),
+                    np.ceil(self.num_envs / num_bcis),
+                )[: self.num_envs].tolist()
+            ),
         )
         self.num_task_plans_per_bci = torch.tensor(
             [
@@ -902,6 +938,11 @@ class SequentialTaskEnv(SceneManipulationEnv):
                 ) = self._navigate_check_success(
                     self.subtask_objs[subtask_num],
                     self.subtask_goals[subtask_num],
+                    (
+                        subtask.articulation_config.articulation_type
+                        if subtask.articulation_config is not None
+                        else None
+                    ),
                     env_idx,
                 )
             elif isinstance(subtask, OpenSubtask):
@@ -1104,20 +1145,63 @@ class SequentialTaskEnv(SceneManipulationEnv):
             subtask_checkers,
         )
 
+    def _is_grasping_partial_env_obj(obj, env_idx, max_angle=85):
+        raise NotImplementedError()
+
+    def _is_navigated_close(
+        self,
+        env_idx: torch.Tensor,
+        goal: Actor,
+        articulation_type: Optional[str] = None,
+    ):
+        navigated_close = (
+            torch.norm(
+                goal.pose.p[env_idx, :2] - self.agent.base_link.pose.p[env_idx, :2],
+                dim=1,
+            )
+            <= self.navigate_cfg.navigated_successfully_dist
+        )
+
+        if isinstance(goal, Articulation) or isinstance(goal, Link):
+            # NOTE (arth): assume nav to same articulation, since we check each parallel subtask at a time
+            relative_pos_world = (
+                self.agent.base_link.pose.p[env_idx] - goal.pose.p[env_idx]
+            )
+
+            relative_pos_local = quaternion_apply(
+                quaternion_invert(goal.pose.q[env_idx]),
+                relative_pos_world,
+            )
+
+            xrange = dict(fridge=[0.933, 1.833], kitchen_counter=[0.3, 1.5])[
+                articulation_type
+            ]
+            yrange = dict(fridge=[-0.6, 0.6], kitchen_counter=[-0.6, 0.6])[
+                articulation_type
+            ]
+
+            navigated_close &= (
+                (xrange[0] <= relative_pos_local[:, 0])
+                & (relative_pos_local[:, 0] <= xrange[1])
+                & (yrange[0] <= relative_pos_local[:, 2])
+                & (relative_pos_local[:, 2] <= yrange[1])
+            )
+
+        return navigated_close
+
     def _navigate_check_success(
         self,
-        obj: Optional[Actor],
+        obj: Union[Actor, None],
         goal: Actor,
+        articulation_type: str,
         env_idx: torch.Tensor,
     ):
         if obj is None:
             is_grasped = torch.zeros_like(env_idx, dtype=torch.bool)
         elif len(obj._scene_idxs) != self.num_envs:
-            is_grasped = torch.zeros_like(env_idx, dtype=torch.bool)
-            env_scene_idx = tensor_intersection(env_idx, obj._scene_idxs)
-            is_grasped[env_scene_idx] = self.agent.is_grasping(obj, max_angle=30)[
-                env_scene_idx
-            ]
+            # NOTE (arth): this is so nav subtask train env can handle grasping when obj
+            #   is only in some parallel envs -- not the cleanest implementation
+            is_grasped = self._is_grasping_partial_env_obj(obj, env_idx, max_angle=30)
         else:
             is_grasped = self.agent.is_grasping(obj, max_angle=30)[env_idx]
 
@@ -1129,13 +1213,8 @@ class SequentialTaskEnv(SceneManipulationEnv):
             torch.abs(rots) <= self.navigate_cfg.navigated_successfully_rot
         )
 
-        navigated_close = (
-            torch.norm(
-                goal.pose.p[env_idx, :2] - self.agent.base_link.pose.p[env_idx, :2],
-                dim=1,
-            )
-            <= self.navigate_cfg.navigated_successfully_dist
-        )
+        navigated_close = self._is_navigated_close(env_idx, goal, articulation_type)
+        is_static = self.agent.is_static(threshold=0.2, base_threshold=0.05)[env_idx]
 
         cumulative_force_within_limit = (
             self.robot_cumulative_force[env_idx]
@@ -1144,11 +1223,15 @@ class SequentialTaskEnv(SceneManipulationEnv):
 
         if self.navigate_cfg.ignore_arm_checkers:
             return (
-                oriented_correctly & navigated_close,
+                oriented_correctly
+                & navigated_close
+                & is_static
+                & cumulative_force_within_limit,
                 dict(
                     is_grasped=is_grasped,
                     oriented_correctly=oriented_correctly,
                     navigated_close=navigated_close,
+                    is_static=is_static,
                     cumulative_force_within_limit=cumulative_force_within_limit,
                 ),
             )
@@ -1179,14 +1262,27 @@ class SequentialTaskEnv(SceneManipulationEnv):
                 < self.navigate_cfg.robot_resting_qpos_tolerance_grasping,
                 dim=1,
             )
+            if len(obj._scene_idxs) != self.num_envs:
+                subtask_envs_with_obj = tensor_intersection_idx(
+                    env_idx, obj._scene_idxs
+                )
+                robot_rest[subtask_envs_with_obj] &= torch.all(
+                    robot_rest_dist[subtask_envs_with_obj]
+                    < self.navigate_cfg.robot_resting_qpos_tolerance,
+                    dim=1,
+                )
 
-        is_static = self.agent.is_static(threshold=0.2, base_threshold=0.05)[env_idx]
         navigate_success = (
             oriented_correctly & navigated_close & ee_rest & robot_rest & is_static
         )
         if obj is not None:
             if len(obj._scene_idxs) != self.num_envs:
-                navigate_success[env_scene_idx] &= is_grasped[env_scene_idx]
+                subtask_envs_with_obj = tensor_intersection_idx(
+                    env_idx, obj._scene_idxs
+                )
+                navigate_success[subtask_envs_with_obj] &= is_grasped[
+                    subtask_envs_with_obj
+                ]
             else:
                 navigate_success &= is_grasped
         return (
@@ -1395,8 +1491,9 @@ class SequentialTaskEnv(SceneManipulationEnv):
                         env_idx, self.subtask_objs[subtask_num]._scene_idxs
                     )
                     obj_pose_wrt_base[env_scene_idx] = vectorize_pose(
-                        base_pose_inv * self.subtask_objs[subtask_num].pose
-                    )[env_scene_idx]
+                        base_pose_inv[env_scene_idx]
+                        * self.subtask_objs[subtask_num].pose
+                    )
                 else:
                     obj_pose_wrt_base[env_idx] = vectorize_pose(
                         base_pose_inv * self.subtask_objs[subtask_num].pose
@@ -1456,8 +1553,19 @@ class SequentialTaskEnv(SceneManipulationEnv):
 
     @property
     def _default_human_render_camera_configs(self):
+        if self.render_mode == "human":
+            room_camera_config = CameraConfig(
+                "render_camera",
+                sapien_utils.look_at([4, -3.5, 3.5], [1.5, -3.5, 0]),
+                1920,
+                1080,
+                1,
+                0.01,
+                10,
+            )
+            return room_camera_config
         # this camera follows the robot around (though might be in walls if the space is cramped)
-        robot_camera_pose = sapien_utils.look_at([-0.2, 0.5, 1], ([0.2, -0.2, 0]))
+        robot_camera_pose = sapien_utils.look_at([-0.2, 0.5, 1], [0.2, -0.2, 0])
         robot_camera_config = CameraConfig(
             "render_camera",
             robot_camera_pose,

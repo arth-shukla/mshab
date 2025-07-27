@@ -49,25 +49,32 @@ if [[ $SUBTASK == "sequential" ]]; then
         ENV_ID="SequentialTask-v0"
 
         # num envs
-        if [[ $SPLIT == "train" ]]; then
-                NUM_ENVS=63
+        if [[ $record_video == "True" ]]; then
+                if [[ $SPLIT == "train" ]]; then
+                        NUM_ENVS=63
+                else
+                        NUM_ENVS=21
+                fi
         else
-                NUM_ENVS=21
+                NUM_ENVS=252
         fi
 
         # horizon
-        # NOTE (arth): we ignore steps needed for the navigate task since we teleport
-        # NOTE (arth): while we set max subtask steps to 200, really we don't need that many for overall horizon
+        # NOTE (arth): in practice, the actual max_episode_steps is often not needed for successful runs
+        #       but for truly fair evaluation, we must simulate the whole episode
+        #       if less-accurate evaluation is acceptable, set continuous_task=False and/or reduce max_episode_steps
         if [[ $TASK == "tidy_house" ]]; then
-                MAX_EPISODE_STEPS=1000
+                MAX_EPISODE_STEPS=$((200*10 + 500*10))
         elif [[ $TASK == "prepare_groceries" ]]; then
-                MAX_EPISODE_STEPS=600
+                MAX_EPISODE_STEPS=$((200*6 + 500*6))
         else
-                MAX_EPISODE_STEPS=800
+                MAX_EPISODE_STEPS=$((200*8 + 500*8))
         fi
 
         # extra args
-        extra_args=()
+        extra_args=(
+                "eval_env.env_kwargs.task_cfgs.navigate.ignore_arm_checkers=True"
+        )
 else
         
         # env id
@@ -86,7 +93,11 @@ else
         fi
 
         # horizon
-        MAX_EPISODE_STEPS=200
+        if [[ $SUBTASK == "navigate" ]]; then
+                MAX_EPISODE_STEPS=1000
+        else
+                MAX_EPISODE_STEPS=200
+        fi
 
         # extra args
         # shellcheck disable=SC2089
@@ -152,4 +163,8 @@ SAPIEN_NO_DISPLAY=1 python -m mshab.evaluate configs/evaluate.yml \
         logger.exp_name="$EXP_NAME" \
         "${extra_args[@]}" 
         # NOTE (arth): one can set easier/harder task conditions as below
-        # eval_env.env_kwargs.task_cfgs="{pick: {robot_cumulative_force_limit: 100000000}, place: {goal_type: zone, robot_cumulative_force_limit: 100000000}, open: {robot_cumulative_force_limit: 100000000}, close: {robot_cumulative_force_limit: 100000000}}"
+        # eval_env.env_kwargs.task_cfgs.pick="{robot_cumulative_force_limit: 100000000}" \
+        # eval_env.env_kwargs.task_cfgs.place="{goal_type: zone, robot_cumulative_force_limit: 100000000}" \
+        # eval_env.env_kwargs.task_cfgs.navigate="{ignore_arm_checkers: True}" \
+        # eval_env.env_kwargs.task_cfgs.open="{robot_cumulative_force_limit: 100000000}" \
+        # eval_env.env_kwargs.task_cfgs.close="{robot_cumulative_force_limit: 100000000}"

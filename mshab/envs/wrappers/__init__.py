@@ -7,3 +7,4 @@ from .observation import (
     StackedDictObservationWrapper,
 )
 from .record import RecordEpisode
+from .record_seq_task import RecordEpisodeSequentialTask

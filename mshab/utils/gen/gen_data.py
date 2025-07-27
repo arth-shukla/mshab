@@ -42,6 +42,7 @@ DEBUG_VIDEO_GEN = False
 SUBTASK_TO_EPISODE_LABELS = dict(
     pick=["straightforward_success"],
     place=["placed_in_goal_success"],
+    navigate=["navigation_success"],
     open=["open_success"],
     close=dict(
         fridge=["closed_success", "success_then_excessive_collisions"],
@@ -94,7 +95,7 @@ def eval(
         # env
         env_id=f"{subtask.capitalize()}SubtaskTrain-v0",
         num_envs=NUM_ENVS,
-        max_episode_steps=200,
+        max_episode_steps=500 if subtask == "navigate" else 200,
         # misc
         record_video=RECORD_VIDEO or DEBUG_VIDEO_GEN,
         info_on_video=False,
@@ -400,7 +401,7 @@ def eval(
         pbar.set_description(f"{step_num=}")
 
     while not check_done():
-        still_running = subtask_type <= 2
+        still_running = subtask_type <= 4
         last_subtask_type[still_running] = subtask_type[still_running]
         timer.end("other")
         action = act(eval_obs, last_subtask_type)
