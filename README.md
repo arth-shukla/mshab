@@ -16,7 +16,7 @@ Official repository for the ManiSkill-HAB project by
 
 ## Updates
 
-- 14-07-2025: Navigate baselines, training envs, and data generation have been added! Furthermore, long-horizon evaluation and data generation with navigation are added.
+- 26-07-2025: Navigate baselines, training envs, and data generation have been added! Furthermore, long-horizon evaluation and data generation with navigation are added.
    - `ReplicaCAD` and `ReplicaCADRearrange` need to be re-downloaded from ManiSkill (see [Setup and Installation Pt 1](#setup-and-installation)). If you downloaded the `rearrange-dataset`, make sure to move it ***outside*** of `$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset` before re-downloading `ReplicaCAD` and `ReplicaCADRearrange`, as this directory will be deleted during re-download.
    - Navigation RL baselines can be downloaded from `arth-shukla/mshab_checkpoints`.
 - 20-02-2025: ManiSkill-HAB has been updated to support ManiSkill3 Beta 18, resulting in **60% less memory usage**!
