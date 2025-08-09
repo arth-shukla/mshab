@@ -139,6 +139,7 @@ def eval(task):
 
     eval_env_cfg = EnvConfig(
         env_id="SequentialTask-v0",
+        obs_mode="rgbd",
         num_envs=NUM_ENVS,
         max_episode_steps=dict(
             tidy_house=200 * 10 + 500 * 10,

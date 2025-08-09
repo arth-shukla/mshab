@@ -94,6 +94,7 @@ def eval(
     env_cfg = EnvConfig(
         # env
         env_id=f"{subtask.capitalize()}SubtaskTrain-v0",
+        obs_mode="rgbd",
         num_envs=NUM_ENVS,
         max_episode_steps=500 if subtask == "navigate" else 200,
         # misc
@@ -345,47 +346,39 @@ def eval(
                 for raw_pose in obj_poses_wrt_tcp.raw_pose[info["success"]].cpu():
                     success_obj_raw_poses_wrt_tcp.append(raw_pose)
 
-        if torch.any(info["success"]):
-            update_pbar()
-            if len(env_cfg.extra_stat_keys) > 0:
-                torch.save(
-                    eval_envs.extra_stats,
-                    logger.exp_path / "eval_extra_stat_keys.pt",
+        update_pbar()
+        if torch.any(done) and len(env_cfg.extra_stat_keys) > 0:
+            torch.save(
+                eval_envs.extra_stats,
+                logger.exp_path / "eval_extra_stat_keys.pt",
+            )
+            for env_num, extra_stats_idx in zip(
+                torch.where(done)[0],
+                -torch.arange(1, torch.sum(done.int() + 1)),
+            ):
+                episode_extra_stats = recursive_slice(
+                    eval_envs.extra_stats, extra_stats_idx
                 )
-                if torch.any(done):
-                    for env_num, extra_stats_idx in zip(
-                        torch.where(done)[0],
-                        -torch.arange(1, torch.sum(done.int() + 1)),
-                    ):
-                        episode_extra_stats = recursive_slice(
-                            eval_envs.extra_stats, extra_stats_idx
-                        )
-                        label, _, _ = get_episode_label_and_events(
-                            eval_envs.unwrapped.task_cfgs,
-                            episode_extra_stats["success"],
-                            episode_extra_stats,
-                        )
-                        if label not in articulation_types_by_label:
-                            articulation_types_by_label[label] = defaultdict(int)
-                        base_subtask = eval_envs.unwrapped.base_task_plans[
-                            (
-                                eval_envs.unwrapped.task_plan[0].composite_subtask_uids[
-                                    env_num
-                                ],
-                            )
-                        ].subtasks[0]
-                        if getattr(base_subtask, "articulation_config", None) is None:
-                            articulation_type = None
-                        else:
-                            articulation_type = (
-                                base_subtask.articulation_config.articulation_type
-                            )
-                        articulation_types_by_label[label][articulation_type] += 1
-                        rcumulative_forces_by_label[label].append(
-                            torch.max(
-                                episode_extra_stats["robot_cumulative_force"]
-                            ).item()
-                        )
+                label, _, _ = get_episode_label_and_events(
+                    eval_envs.unwrapped.task_cfgs,
+                    episode_extra_stats["success"],
+                    episode_extra_stats,
+                )
+                if label not in articulation_types_by_label:
+                    articulation_types_by_label[label] = defaultdict(int)
+                base_subtask = eval_envs.unwrapped.base_task_plans[
+                    (eval_envs.unwrapped.task_plan[0].composite_subtask_uids[env_num],)
+                ].subtasks[0]
+                if getattr(base_subtask, "articulation_config", None) is None:
+                    articulation_type = None
+                else:
+                    articulation_type = (
+                        base_subtask.articulation_config.articulation_type
+                    )
+                articulation_types_by_label[label][articulation_type] += 1
+                rcumulative_forces_by_label[label].append(
+                    torch.max(episode_extra_stats["robot_cumulative_force"]).item()
+                )
 
     step_num = 0
 
