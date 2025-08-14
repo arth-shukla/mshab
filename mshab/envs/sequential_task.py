@@ -853,6 +853,40 @@ class SequentialTaskEnv(SceneManipulationEnv):
         )
         subtask_type[~success] = self.task_ids[self.subtask_pointer[~success]]
 
+        objs = []
+        for actor in self.scene.actors.values():
+            objs.append(actor)
+        for art in self.scene.articulations.values():
+            for link in art.links:
+                objs.append(link)
+
+        obj_name_to_seg_id, seg_id_to_raw_pose = dict(), dict()
+        for obj in objs:
+            if obj.name not in obj_name_to_seg_id:
+                obj_name_to_seg_id[obj.name] = torch.full(
+                    (self.num_envs,), -1, dtype=torch.long, device=self.device
+                )
+
+            obj: Union[Actor, Link]
+            sapien_objs = obj._objs
+            scene_idxs = obj._scene_idxs
+            raw_pose = obj.pose.raw_pose
+
+            for sapien_obj, scene_id, sapien_obj_raw_pose in zip(
+                sapien_objs, scene_idxs, raw_pose
+            ):
+                if isinstance(obj, Actor):
+                    seg_id = sapien_obj.per_scene_id
+                elif isinstance(obj, Link):
+                    seg_id = sapien_obj.entity.per_scene_id
+                seg_id_str = str(seg_id)
+                obj_name_to_seg_id[obj.name][scene_id] = seg_id
+                if seg_id_str not in seg_id_to_raw_pose:
+                    seg_id_to_raw_pose[seg_id_str] = torch.zeros(
+                        (self.num_envs, 7), dtype=torch.float, device=self.device
+                    )
+                seg_id_to_raw_pose[seg_id_str][scene_id] = sapien_obj_raw_pose
+
         return dict(
             success=success,
             fail=fail,
@@ -863,6 +897,14 @@ class SequentialTaskEnv(SceneManipulationEnv):
             robot_cumulative_force=self.robot_cumulative_force,
             **success_checkers,
             **progressive_task_checkers,
+            obj_name_to_seg_id=obj_name_to_seg_id,
+            seg_id_to_raw_pose=seg_id_to_raw_pose,
+            subtask_obj_pose=dict(
+                (str(i), pose)
+                for i, pose in enumerate(
+                    [obj.pose.raw_pose for obj in self.subtask_objs]
+                )
+            ),
         )
 
     def _progressive_task_check_success(self):

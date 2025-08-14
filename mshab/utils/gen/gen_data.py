@@ -94,7 +94,7 @@ def eval(
     env_cfg = EnvConfig(
         # env
         env_id=f"{subtask.capitalize()}SubtaskTrain-v0",
-        obs_mode="rgbd",
+        obs_mode="rgb+depth+segmentation",
         num_envs=NUM_ENVS,
         max_episode_steps=500 if subtask == "navigate" else 200,
         # misc
@@ -102,7 +102,7 @@ def eval(
         info_on_video=False,
         debug_video=DEBUG_VIDEO_GEN,
         debug_video_gen=DEBUG_VIDEO_GEN,
-        continuous_task=True,
+        continuous_task=False,
         cat_state=True,
         cat_pixels=False,
         task_plan_fp=(
