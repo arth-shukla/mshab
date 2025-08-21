@@ -35,6 +35,7 @@ else
     data_dir_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange-dataset/$TASK/$SUBTASK"
 fi
 
+# NOTE: the below args are defaults, however the released checkpoints may use different hyperparameters. To train using the same args, check the config.yml files from the released checkpoints.
 args=(
     "logger.wandb_cfg.group=$GROUP"
     "logger.exp_name=$EXP_NAME"

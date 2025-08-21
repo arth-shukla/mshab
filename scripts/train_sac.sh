@@ -15,13 +15,21 @@ EXP_NAME="$ENV_ID/$GROUP/sac-$SUBTASK-$OBJ-local"
 # shellcheck disable=SC2001
 PROJECT_NAME="MS-HAB-RCAD-$(echo $SUBTASK | sed 's/\b\(.\)/\u\1/g')-$TASK-sac"
 
-WANDB=True
+WANDB=False
 # NOTE (arth): tensorboard=False since there seems to be an issue with tensorboardX crashing on very long runs
 if [[ -z "${MS_ASSET_DIR}" ]]; then
     MS_ASSET_DIR="$HOME/.maniskill"
 fi
 
-max_episode_steps=1000
+if [ "$SUBTASK" = "navigate" ]; then
+    train_max_episode_steps=1000
+    eval_max_episode_steps=1000
+else
+    train_max_episode_steps=100
+    eval_max_episode_steps=200
+fi
+
+# NOTE: the below args are defaults, however the released checkpoints may use different hyperparameters. To train using the same args, check the config.yml files from the released checkpoints.
 SAPIEN_NO_DISPLAY=1 python -m mshab.train_sac configs/sac_pick.yml \
         logger.clear_out="True" \
         logger.wandb_cfg.group="$GROUP" \
@@ -31,10 +39,10 @@ SAPIEN_NO_DISPLAY=1 python -m mshab.train_sac configs/sac_pick.yml \
         env.task_plan_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/task_plans/$TASK/$SUBTASK/$SPLIT/$OBJ.json" \
         env.spawn_data_fp="$MS_ASSET_DIR/data/scene_datasets/replica_cad_dataset/rearrange/spawn_data/$TASK/$SUBTASK/$SPLIT/spawn_data.pt" \
         \
-        env.max_episode_steps=$max_episode_steps \
-        eval_env.max_episode_steps=$max_episode_steps \
-        env.env_kwargs.task_cfgs.navigate.horizon=$max_episode_steps \
-        eval_env.env_kwargs.task_cfgs.navigate.horizon=$max_episode_steps \
+        env.max_episode_steps=$train_max_episode_steps \
+        eval_env.max_episode_steps=$eval_max_episode_steps \
+        env.env_kwargs.task_cfgs.${SUBTASK}.horizon=$train_max_episode_steps \
+        eval_env.env_kwargs.task_cfgs.${SUBTASK}.horizon=$eval_max_episode_steps \
         \
         algo.gamma=0.95 \
         algo.total_timesteps=1_000_000_000 \
