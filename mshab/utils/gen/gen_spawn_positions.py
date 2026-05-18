@@ -776,6 +776,14 @@ def gen_close_spawn_data(
             joint_qmax = subtask_articulation.qlimits[
                 :, subtask.articulation_handle_active_joint_idx, 1
             ]
+            if (
+                args.task == "set_table"
+                and args.subtask == "close"
+                and args.split == "val"
+                and subtask.articulation_type == "fridge"
+            ):
+                # NOTE (arth): fridge near wall in this case, can't use qmax
+                joint_qmax[:] = 1.8
             joint_qmin = subtask_articulation.qlimits[
                 :, subtask.articulation_handle_active_joint_idx, 0
             ]
