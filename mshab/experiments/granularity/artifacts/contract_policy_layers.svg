@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1050" viewBox="0 0 2200 1050" role="img" aria-labelledby="title description">
+<title id="title">MS-HAB granularity experiment: Contract and Policy layers</title>
+<desc id="description">Five parameterized contracts bound to 53 concrete RL checkpoint policies.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#7552d6"/>
+</marker>
+</defs>
+<rect width="2200" height="1050" fill="#ffffff"/>
+<rect x="25" y="20" width="2150" height="405" rx="20" fill="#fbf5f1"/>
+<rect x="25" y="455" width="2150" height="550" rx="20" fill="#f6f3fc"/>
+<rect x="25" y="20" width="8" height="405" rx="4" fill="#c6531a"/>
+<rect x="25" y="455" width="8" height="550" rx="4" fill="#7552d6"/>
+<text x="55" y="62" font-size="27" font-weight="700" fill="#b94a17" text-anchor="start">Contract layer</text>
+<text x="260" y="62" font-size="16" font-weight="400" fill="#71809b" text-anchor="start">5 reusable symbolic interfaces · inputs / preconditions / effects / deletes</text>
+<text x="55" y="499" font-size="27" font-weight="700" fill="#6842cb" text-anchor="start">Policy layer</text>
+<text x="225" y="499" font-size="16" font-weight="400" fill="#71809b" text-anchor="start">53 stored RL checkpoint policies · each has exactly one EXECUTES connection</text>
+<rect x="45" y="82" width="400" height="315" rx="16" fill="#fffaf2" stroke="#c6531a" stroke-width="3"/>
+<path d="M 45 98 Q 45 82 61 82 H 429 Q 445 82 445 98 V 135 H 45 Z" fill="#c6531a"/>
+<text x="245.0" y="119" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">NavigateContract</text>
+<text x="61" y="168" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Inputs</text>
+<text x="61" y="190" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">goal</text>
+<text x="61" y="225" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Preconditions</text>
+<text x="61" y="247" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">present({goal})</text>
+<text x="61" y="282" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Effects</text>
+<text x="61" y="304" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">reachable({goal})</text>
+<text x="61" y="339" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Deletes</text>
+<text x="61" y="361" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">—</text>
+<text x="245.0" y="382" font-size="13" font-weight="700" fill="#8b5b46" text-anchor="middle">3 policies</text>
+<path d="M 245.0 538 V 408" fill="none" stroke="#7552d6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="255.0" y="448" font-size="12" font-weight="400" fill="#7552d6" text-anchor="start">executes</text>
+<rect x="45" y="535" width="400" height="400" rx="15" fill="#fbfaff" stroke="#7552d6" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="245.0" y="566" font-size="16" font-weight="700" fill="#6842cb" text-anchor="middle">3 policies</text>
+<rect x="59.0" y="584" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="245.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.navigate.all</text>
+<rect x="59.0" y="611" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="245.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.navigate.all</text>
+<rect x="59.0" y="638" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="245.0" y="653" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.navigate.all</text>
+<rect x="475" y="82" width="400" height="315" rx="16" fill="#fffaf2" stroke="#c6531a" stroke-width="3"/>
+<path d="M 475 98 Q 475 82 491 82 H 859 Q 875 82 875 98 V 135 H 475 Z" fill="#c6531a"/>
+<text x="675.0" y="119" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">PickContract</text>
+<text x="491" y="168" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Inputs</text>
+<text x="491" y="190" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">object</text>
+<text x="491" y="225" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Preconditions</text>
+<text x="491" y="247" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">reachable({object}), gripper_empty()</text>
+<text x="491" y="282" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Effects</text>
+<text x="491" y="304" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">holding({object})</text>
+<text x="491" y="339" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Deletes</text>
+<text x="491" y="361" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">gripper_empty()</text>
+<text x="675.0" y="382" font-size="13" font-weight="700" fill="#8b5b46" text-anchor="middle">23 policies</text>
+<path d="M 675.0 538 V 408" fill="none" stroke="#7552d6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="685.0" y="448" font-size="12" font-weight="400" fill="#7552d6" text-anchor="start">executes</text>
+<rect x="475" y="535" width="400" height="400" rx="15" fill="#fbfaff" stroke="#7552d6" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="675.0" y="566" font-size="16" font-weight="700" fill="#6842cb" text-anchor="middle">23 policies</text>
+<rect x="489.0" y="584" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.002_master_chef_can</text>
+<rect x="489.0" y="611" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.003_cracker_box</text>
+<rect x="489.0" y="638" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="653" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.004_sugar_box</text>
+<rect x="489.0" y="665" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="680" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.005_tomato_soup_can</text>
+<rect x="489.0" y="692" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="707" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.007_tuna_fish_can</text>
+<rect x="489.0" y="719" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="734" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.008_pudding_box</text>
+<rect x="489.0" y="746" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="761" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.009_gelatin_box</text>
+<rect x="489.0" y="773" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="788" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.010_potted_meat_can</text>
+<rect x="489.0" y="800" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="815" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.024_bowl</text>
+<rect x="489.0" y="827" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="842" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.pick.all</text>
+<rect x="489.0" y="854" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="869" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.pick.013_apple</text>
+<rect x="489.0" y="881" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="580.0" y="896" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.pick.024_bowl</text>
+<rect x="679.0" y="584" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.pick.all</text>
+<rect x="679.0" y="611" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.002_master_chef_can</text>
+<rect x="679.0" y="638" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="653" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.003_cracker_box</text>
+<rect x="679.0" y="665" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="680" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.004_sugar_box</text>
+<rect x="679.0" y="692" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="707" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.005_tomato_soup_can</text>
+<rect x="679.0" y="719" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="734" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.007_tuna_fish_can</text>
+<rect x="679.0" y="746" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="761" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.008_pudding_box</text>
+<rect x="679.0" y="773" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="788" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.009_gelatin_box</text>
+<rect x="679.0" y="800" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="815" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.010_potted_meat_can</text>
+<rect x="679.0" y="827" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="842" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.024_bowl</text>
+<rect x="679.0" y="854" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="770.0" y="869" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.pick.all</text>
+<rect x="905" y="82" width="400" height="315" rx="16" fill="#fffaf2" stroke="#c6531a" stroke-width="3"/>
+<path d="M 905 98 Q 905 82 921 82 H 1289 Q 1305 82 1305 98 V 135 H 905 Z" fill="#c6531a"/>
+<text x="1105.0" y="119" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">PlaceContract</text>
+<text x="921" y="168" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Inputs</text>
+<text x="921" y="190" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">object, destination</text>
+<text x="921" y="225" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Preconditions</text>
+<text x="921" y="247" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">holding({object}), reachable({destination})</text>
+<text x="921" y="282" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Effects</text>
+<text x="921" y="304" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">at({object},{destination}), gripper_empty()</text>
+<text x="921" y="339" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Deletes</text>
+<text x="921" y="361" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">holding({object})</text>
+<text x="1105.0" y="382" font-size="13" font-weight="700" fill="#8b5b46" text-anchor="middle">23 policies</text>
+<path d="M 1105.0 538 V 408" fill="none" stroke="#7552d6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="1115.0" y="448" font-size="12" font-weight="400" fill="#7552d6" text-anchor="start">executes</text>
+<rect x="905" y="535" width="400" height="400" rx="15" fill="#fbfaff" stroke="#7552d6" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1105.0" y="566" font-size="16" font-weight="700" fill="#6842cb" text-anchor="middle">23 policies</text>
+<rect x="919.0" y="584" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.002_master_chef_can</text>
+<rect x="919.0" y="611" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.003_cracker_box</text>
+<rect x="919.0" y="638" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="653" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.004_sugar_box</text>
+<rect x="919.0" y="665" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="680" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.005_tomato_soup_can</text>
+<rect x="919.0" y="692" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="707" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.007_tuna_fish_can</text>
+<rect x="919.0" y="719" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="734" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.008_pudding_box</text>
+<rect x="919.0" y="746" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="761" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.009_gelatin_box</text>
+<rect x="919.0" y="773" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="788" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.010_potted_meat_can</text>
+<rect x="919.0" y="800" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="815" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.024_bowl</text>
+<rect x="919.0" y="827" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="842" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">PG.place.all</text>
+<rect x="919.0" y="854" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="869" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.place.013_apple</text>
+<rect x="919.0" y="881" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1010.0" y="896" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.place.024_bowl</text>
+<rect x="1109.0" y="584" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.place.all</text>
+<rect x="1109.0" y="611" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.002_master_chef_can</text>
+<rect x="1109.0" y="638" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="653" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.003_cracker_box</text>
+<rect x="1109.0" y="665" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="680" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.004_sugar_box</text>
+<rect x="1109.0" y="692" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="707" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.005_tomato_soup_can</text>
+<rect x="1109.0" y="719" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="734" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.007_tuna_fish_can</text>
+<rect x="1109.0" y="746" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="761" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.008_pudding_box</text>
+<rect x="1109.0" y="773" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="788" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.009_gelatin_box</text>
+<rect x="1109.0" y="800" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="815" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.010_potted_meat_can</text>
+<rect x="1109.0" y="827" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="842" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.024_bowl</text>
+<rect x="1109.0" y="854" width="182.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1200.0" y="869" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">TH.place.all</text>
+<rect x="1335" y="82" width="400" height="315" rx="16" fill="#fffaf2" stroke="#c6531a" stroke-width="3"/>
+<path d="M 1335 98 Q 1335 82 1351 82 H 1719 Q 1735 82 1735 98 V 135 H 1335 Z" fill="#c6531a"/>
+<text x="1535.0" y="119" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">OpenContract</text>
+<text x="1351" y="168" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Inputs</text>
+<text x="1351" y="190" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">articulation</text>
+<text x="1351" y="225" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Preconditions</text>
+<text x="1351" y="247" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">reachable({articulation}), closed({articulation})</text>
+<text x="1351" y="282" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Effects</text>
+<text x="1351" y="304" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">open({articulation})</text>
+<text x="1351" y="339" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Deletes</text>
+<text x="1351" y="361" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">closed({articulation})</text>
+<text x="1535.0" y="382" font-size="13" font-weight="700" fill="#8b5b46" text-anchor="middle">2 policies</text>
+<path d="M 1535.0 538 V 408" fill="none" stroke="#7552d6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="1545.0" y="448" font-size="12" font-weight="400" fill="#7552d6" text-anchor="start">executes</text>
+<rect x="1335" y="535" width="400" height="400" rx="15" fill="#fbfaff" stroke="#7552d6" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1535.0" y="566" font-size="16" font-weight="700" fill="#6842cb" text-anchor="middle">2 policies</text>
+<rect x="1349.0" y="584" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1535.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.open.fridge</text>
+<rect x="1349.0" y="611" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1535.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.open.kitchen_counter</text>
+<rect x="1765" y="82" width="400" height="315" rx="16" fill="#fffaf2" stroke="#c6531a" stroke-width="3"/>
+<path d="M 1765 98 Q 1765 82 1781 82 H 2149 Q 2165 82 2165 98 V 135 H 1765 Z" fill="#c6531a"/>
+<text x="1965.0" y="119" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">CloseContract</text>
+<text x="1781" y="168" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Inputs</text>
+<text x="1781" y="190" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">articulation</text>
+<text x="1781" y="225" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Preconditions</text>
+<text x="1781" y="247" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">reachable({articulation}), open({articulation})</text>
+<text x="1781" y="282" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Effects</text>
+<text x="1781" y="304" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">closed({articulation})</text>
+<text x="1781" y="339" font-size="14" font-weight="700" fill="#c6531a" text-anchor="start">Deletes</text>
+<text x="1781" y="361" font-size="13" font-weight="400" fill="#39465a" text-anchor="start">open({articulation})</text>
+<text x="1965.0" y="382" font-size="13" font-weight="700" fill="#8b5b46" text-anchor="middle">2 policies</text>
+<path d="M 1965.0 538 V 408" fill="none" stroke="#7552d6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="1975.0" y="448" font-size="12" font-weight="400" fill="#7552d6" text-anchor="start">executes</text>
+<rect x="1765" y="535" width="400" height="400" rx="15" fill="#fbfaff" stroke="#7552d6" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1965.0" y="566" font-size="16" font-weight="700" fill="#6842cb" text-anchor="middle">2 policies</text>
+<rect x="1779.0" y="584" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1965.0" y="599" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.close.fridge</text>
+<rect x="1779.0" y="611" width="372.0" height="21" rx="10" fill="#ffffff" stroke="#8d6ee0" stroke-width="1.4"/>
+<text x="1965.0" y="626" font-size="10.5" font-weight="400" fill="#6245b1" text-anchor="middle">ST.close.kitchen_counter</text>
+<text x="55" y="972" font-size="14" font-weight="400" fill="#71809b" text-anchor="start">PG = prepare_groceries · ST = set_table · TH = tidy_house</text>
+<text x="2145" y="972" font-size="14" font-weight="400" fill="#6842cb" text-anchor="end">Only relation: Policy —EXECUTES→ Contract · no Policy-to-Policy edges</text>
+</svg>

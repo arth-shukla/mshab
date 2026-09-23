@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1260" viewBox="0 0 1900 1260" role="img" aria-labelledby="title description">
+<title id="title">Coarse MS-HAB Layer-1 and Layer-2 catalog</title>
+<desc id="description">Three task-family SubGoal graphs and the Retrieve, Deliver, and Restore SkillSubgraph templates.</desc>
+<defs>
+<marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#298f5b"/>
+</marker>
+<marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#cb3a3a"/>
+</marker>
+</defs>
+<rect width="1900" height="1260" fill="#ffffff"/>
+<text x="55" y="55" font-size="30" font-weight="700" fill="#243247" text-anchor="start">Coarse semantic higher layers</text>
+<text x="1845" y="55" font-size="17" font-weight="400" fill="#66758d" text-anchor="end">42 SubGoals · 42 SkillSubgraphs · 252 candidate SkillNodes</text>
+<rect x="35" y="85" width="1830" height="330" rx="20" fill="#eef5fd"/>
+<rect x="35" y="445" width="1830" height="745" rx="20" fill="#eff8f2"/>
+<text x="60" y="125" font-size="25" font-weight="700" fill="#276db2" text-anchor="start">Layer 1 · SubGoal graphs</text>
+<text x="60" y="474" font-size="25" font-weight="700" fill="#257c50" text-anchor="start">Layer 2 · one semantic SkillSubgraph per SubGoal</text>
+<rect x="65" y="150" width="550" height="225" rx="14" fill="#ffffff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="340" y="185" font-size="21" font-weight="700" fill="#2f3a4d" text-anchor="middle">PrepareGroceries</text>
+<text x="340" y="212" font-size="14" font-weight="400" fill="#66758d" text-anchor="middle">9 object capabilities · 18 SubGoals</text>
+<rect x="195" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="260" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Retrieve</text>
+<rect x="365" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="430" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Deliver</text>
+<path d="M 325 270 L 365 270" fill="none" stroke="#298f5b" stroke-width="2.2" marker-end="url(#arrow-green)"/>
+<text x="340" y="345" font-size="13" font-weight="400" fill="#66758d" text-anchor="middle">repeated once per supported object category</text>
+<rect x="655" y="150" width="550" height="225" rx="14" fill="#ffffff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="930" y="185" font-size="21" font-weight="700" fill="#2f3a4d" text-anchor="middle">SetTable</text>
+<text x="930" y="212" font-size="14" font-weight="400" fill="#66758d" text-anchor="middle">2 object capabilities · 6 SubGoals</text>
+<rect x="735" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="800" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Retrieve</text>
+<rect x="905" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="970" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Deliver</text>
+<rect x="1075" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="1140" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Restore</text>
+<path d="M 865 270 L 905 270" fill="none" stroke="#298f5b" stroke-width="2.2" marker-end="url(#arrow-green)"/>
+<path d="M 1035 270 L 1075 270" fill="none" stroke="#298f5b" stroke-width="2.2" marker-end="url(#arrow-green)"/>
+<text x="930" y="345" font-size="13" font-weight="400" fill="#66758d" text-anchor="middle">bowl + apple · articulated sources</text>
+<rect x="1245" y="150" width="550" height="225" rx="14" fill="#ffffff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="1520" y="185" font-size="21" font-weight="700" fill="#2f3a4d" text-anchor="middle">TidyHouse</text>
+<text x="1520" y="212" font-size="14" font-weight="400" fill="#66758d" text-anchor="middle">9 object capabilities · 18 SubGoals</text>
+<rect x="1375" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="1440" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Retrieve</text>
+<rect x="1545" y="244" width="130" height="52" rx="14" fill="#f7fbff" stroke="#4b8bc6" stroke-width="2"/>
+<text x="1610" y="276" font-size="16" font-weight="700" fill="#276db2" text-anchor="middle">Deliver</text>
+<path d="M 1505 270 L 1545 270" fill="none" stroke="#298f5b" stroke-width="2.2" marker-end="url(#arrow-green)"/>
+<text x="1520" y="345" font-size="13" font-weight="400" fill="#66758d" text-anchor="middle">repeated once per supported object category</text>
+<rect x="65" y="515" width="550" height="600" rx="14" fill="#ffffff" stroke="#298f5b" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="340.0" y="553" font-size="20" font-weight="700" fill="#257c50" text-anchor="middle">Retrieve(obj)</text>
+<rect x="675" y="515" width="550" height="600" rx="14" fill="#ffffff" stroke="#298f5b" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="950.0" y="553" font-size="20" font-weight="700" fill="#257c50" text-anchor="middle">Deliver(obj,destination)</text>
+<rect x="1285" y="515" width="550" height="600" rx="14" fill="#ffffff" stroke="#298f5b" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1560.0" y="553" font-size="20" font-weight="700" fill="#257c50" text-anchor="middle">Restore(source)</text>
+<rect x="95" y="562" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="115" y="592" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Primary</text>
+<text x="115" y="618" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate object → Pick</text>
+<rect x="95" y="697" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="115" y="727" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Container access</text>
+<text x="115" y="753" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate source → Open → Navigate object → Pick</text>
+<rect x="95" y="832" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="115" y="862" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Recovery</text>
+<text x="115" y="888" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Relocalize object → Regrasp</text>
+<path d="M 340 638 L 340 697" fill="none" stroke="#cb3a3a" stroke-width="2.2" marker-end="url(#arrow-red)" stroke-dasharray="7 5"/>
+<path d="M 340 773 L 340 832" fill="none" stroke="#cb3a3a" stroke-width="2.2" marker-end="url(#arrow-red)" stroke-dasharray="7 5"/>
+<text x="340" y="982" font-size="13" font-weight="400" fill="#7d5360" text-anchor="middle">Achievers: ALTERNATIVE_TO · ordered by FALLBACK_TO</text>
+<rect x="705" y="562" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="725" y="592" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Primary</text>
+<text x="725" y="618" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate destination → Place</text>
+<rect x="705" y="697" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="725" y="727" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Re-approach</text>
+<text x="725" y="753" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate destination again → Place</text>
+<rect x="705" y="832" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="725" y="862" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Dropped-object recovery</text>
+<text x="725" y="888" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate → Pick → Navigate → Place</text>
+<path d="M 950 638 L 950 697" fill="none" stroke="#cb3a3a" stroke-width="2.2" marker-end="url(#arrow-red)" stroke-dasharray="7 5"/>
+<path d="M 950 773 L 950 832" fill="none" stroke="#cb3a3a" stroke-width="2.2" marker-end="url(#arrow-red)" stroke-dasharray="7 5"/>
+<text x="950" y="982" font-size="13" font-weight="400" fill="#7d5360" text-anchor="middle">Achievers: ALTERNATIVE_TO · ordered by FALLBACK_TO</text>
+<rect x="1315" y="612" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="1335" y="642" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Primary</text>
+<text x="1335" y="668" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate source → Close</text>
+<rect x="1315" y="767" width="490" height="76" rx="14" fill="#f8fffa" stroke="#62a981" stroke-width="2"/>
+<text x="1335" y="797" font-size="14" font-weight="700" fill="#257c50" text-anchor="start">Recovery</text>
+<text x="1335" y="823" font-size="13" font-weight="400" fill="#40536a" text-anchor="start">Navigate source again → Close</text>
+<path d="M 1560 688 L 1560 767" fill="none" stroke="#cb3a3a" stroke-width="2.2" marker-end="url(#arrow-red)" stroke-dasharray="7 5"/>
+<text x="1560" y="920" font-size="13" font-weight="400" fill="#66758d" text-anchor="middle">SetTable only; skipped when closed(source) already holds</text>
+<text x="1560" y="982" font-size="13" font-weight="400" fill="#7d5360" text-anchor="middle">Achievers: ALTERNATIVE_TO · ordered by FALLBACK_TO</text>
+<text x="65" y="1155" font-size="14" font-weight="400" fill="#52657a" text-anchor="start">Solid green: ENABLES · dashed red: FALLBACK_TO · ALTERNATIVE_TO is symmetric between achievers</text>
+<text x="1835" y="1155" font-size="14" font-weight="400" fill="#52657a" text-anchor="end">SkillNode → Contract only; no Policy IDs in Layers 1/2</text>
+</svg>

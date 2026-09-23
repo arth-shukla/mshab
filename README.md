@@ -14,6 +14,36 @@ Official repository for the ManiSkill-HAB project by
 
 **[Paper](https://arxiv.org/abs/2412.13211)** | **[Website](https://arth-shukla.github.io/mshab/)** | **[Models](https://huggingface.co/arth-shukla/mshab_checkpoints)** | **[Dataset](https://arth-shukla.github.io/mshab/#dataset-section)** | **[Supplementary](https://sites.google.com/view/maniskill-hab)**
 
+## Skill Library (experimental)
+
+This fork includes a four-layer object-oriented skill library. A text task
+description is the *goal*; Layer 1 decomposes it into *sub-goals*. Every
+sub-goal owns one Layer-2 `SkillSubgraph` of *skill nodes*; typed
+relations connect nodes inside and across these subgraphs and encode the
+semantic order of the task. These first two layers are scene-independent. Each
+skill node references one *contract* (Layer 3), whose preconditions decide only
+whether it can physically start in the current scene. Contracts are bound
+many-to-many to low-level *policies* (Layer 4: RL/BC/DP/VLA checkpoints or
+controllers): one contract may be executed by several policies, and one policy
+may execute several contracts. Policies communicate with MS-HAB through an
+explicit environment entity/fact/snapshot adapter. A complete manual SetTable
+graph is packaged under `mshab/skills/tasks/set_table`, and interfaces for
+custom contracts and future skill-node insertion patches are included. The initial graph is
+manual; a future insertion VLM will place new skill nodes, while a separately
+trained graph-conditioned VLM will select one next skill node per decision.
+
+<p align="center">
+  <img src="./docs/static/images/skill_library_architecture.svg"
+       alt="Task-conditioned skill library architecture" width="100%" />
+</p>
+
+See the [skill-library guide](./mshab/skills/README.md) for the Docker
+workflow, checkpoint download commands, API examples, the runnable SetTable
+graph-plan example, and the tests under `tests/`.
+The first complete manual SetTable graph is available as
+[JSON](./mshab/skills/catalogs/set_table.json) and as a
+[four-layer SVG diagram](./docs/static/images/set_table_skill_graph.svg).
+
 ## Updates
 
 <div align="center">
@@ -29,6 +59,30 @@ Official repository for the ManiSkill-HAB project by
    - To update, please either remove and re-clone the `mshab` branch in ManiSkill3, or pull the latest changes from the `mshab` branch in ManiSkill3. Then, `pip install -e ManiSkill` again.
 
 ## Setup and Installation
+
+### Docker (recommended for this fork)
+
+This fork ships a `Dockerfile` and `docker-compose.yml` that pin the exact
+CUDA / PyTorch / ManiSkill / SAPIEN combination MS-HAB's GPU backend needs, so
+none of the conda steps below are required. The host only needs an NVIDIA GPU
+with a recent driver, Docker, and the
+[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+
+```bash
+docker compose build                                  # ~27GB image
+docker compose run --rm mshab mshab-download-assets   # ycb + ReplicaCAD + ReplicaCADRearrange, ~4.4GB
+docker compose run --rm mshab                         # interactive shell in /work/mshab
+```
+
+The repository is bind-mounted at `/work/mshab`, so host edits take effect
+without a rebuild, and `MS_ASSET_DIR`, `MSHAB_EXPS_DIR` and `SAPIEN_NO_DISPLAY`
+are preset. Evaluation outputs land on the host under `./mshab_exps`.
+Policy checkpoints are mounted from a host directory (`MSHAB_CKPT_DIR`,
+default `/data/mshab/mshab_checkpoints`); see the
+[skill-library guide](./mshab/skills/README.md#download-checkpoints) for the
+download command and which policies each task needs.
+
+### Native install
 
 1. **Install Environments**
 

@@ -1,0 +1,80 @@
+schema_version: mshab.instruction-abstraction.v1
+name: set_table_instruction_abstraction
+task_family: set_table
+split: train
+seed: 0
+
+# One GT task, one graph, one scene context. Only the instruction changes, so
+# any difference across rows is attributable to instruction abstraction alone.
+# Scene context is held constant on purpose: instruction abstraction and scene
+# observability are separate axes, and mixing them would make L3/L4
+# unanswerable for a reason that has nothing to do with reasoning.
+scene_context:
+  # Stated once and held constant at every level. Without it the success
+  # criterion drifts with the instruction: "set the table with the bowl and
+  # the apple" does not, on its own, entail closing the fridge, so a plan that
+  # delivers both objects would be scored wrong for a reason that is about
+  # goal specification rather than decomposition.
+  task_convention: >-
+    A household task is finished only when every container that was opened
+    during it has been returned to its closed state, and every object the task
+    concerns has reached its destination.
+  dining_table: "the dining table, currently empty"
+  objects:
+    - id: "024_bowl"
+      description: "a bowl, currently inside the closed kitchen-counter drawer"
+    - id: "013_apple"
+      description: "an apple, currently inside the closed fridge"
+  articulations:
+    - id: "kitchen_counter"
+      state: "closed"
+    - id: "fridge"
+      state: "closed"
+
+cases:
+  - id: L0
+    case_type: level
+    plan_index: 0
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    ability: instruction following
+    instruction: >-
+      Navigate to the kitchen counter, open its drawer, navigate to the bowl,
+      pick the bowl, navigate to the dining table, place the bowl there,
+      navigate back to the kitchen counter, close its drawer, navigate to the
+      fridge, open it, navigate to the apple, pick the apple, navigate to the
+      dining table, place the apple there, navigate back to the fridge, and
+      close it.
+  - id: L1
+    case_type: level
+    plan_index: 0
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    ability: ordering / decomposition
+    instruction: >-
+      Put the bowl and the apple on the dining table, and close everything you
+      opened afterward. Do the bowl before the apple.
+  - id: L2
+    case_type: level
+    plan_index: 0
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    ability: task reasoning
+    instruction: >-
+      Set the table with the bowl and the apple.
+  - id: L3
+    case_type: level
+    plan_index: 0
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    ability: object / subgoal inference
+    instruction: >-
+      Set the table.
+  - id: L4
+    case_type: level
+    plan_index: 0
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    ability: intent to task grounding
+    instruction: >-
+      I'm ready for lunch.

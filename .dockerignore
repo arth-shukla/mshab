@@ -1,0 +1,27 @@
+.git
+.gitignore
+.pre-commit-config.yaml
+
+# docs/website assets are not needed to run the benchmark
+docs
+
+# local experiment / checkpoint / dataset output
+mshab_exps
+mshab_checkpoints
+wandb
+runs
+*.pt
+*.ckpt
+*.mp4
+*.h5
+*.zarr
+
+# python build artifacts
+__pycache__
+*.py[cod]
+*.egg-info
+build
+dist
+.ipynb_checkpoints
+.venv
+venv

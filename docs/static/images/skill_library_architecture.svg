@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="970" viewBox="0 0 1200 970" role="img" aria-labelledby="title desc">
+  <title id="title">Task-conditioned skill library architecture</title>
+  <desc id="desc">Four layers from a sub-goal graph through candidate skill composition and contracts to the low-level policies that execute them.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#24364b"/>
+    </marker>
+    <style>
+      .title { font: 700 25px Arial, sans-serif; fill: #111827; }
+      .label { font: 700 18px Arial, sans-serif; fill: #111827; }
+      .text { font: 15px Arial, sans-serif; fill: #1f2937; }
+      .small { font: 13px Arial, sans-serif; fill: #374151; }
+      .tiny { font: 11px Arial, sans-serif; fill: #374151; }
+      .box { stroke-width: 2; rx: 12; ry: 12; }
+      .node { stroke-width: 1.5; rx: 18; ry: 18; }
+      .edge { fill: none; stroke: #24364b; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <!-- Layer 1 -->
+  <rect class="box" x="20" y="15" width="1160" height="175" fill="#eaf4ff" stroke="#3484c5"/>
+  <text class="title" x="600" y="48" text-anchor="middle">1. Goal decomposed into a Sub-goal Graph</text>
+  <rect x="55" y="67" width="240" height="88" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text class="label" x="75" y="92">Goal (task text)</text>
+  <text class="small" x="75" y="118">“Make soup and serve it</text>
+  <text class="small" x="75" y="138">at the table.”</text>
+  <path class="edge" d="M295 111 H395"/>
+  <rect class="node" x="395" y="87" width="170" height="48" fill="#dff4df" stroke="#399447"/>
+  <text class="text" x="480" y="117" text-anchor="middle">retrieved(soup)</text>
+  <path class="edge" d="M565 111 H655"/>
+  <rect class="node" x="655" y="87" width="160" height="48" fill="#fff1ba" stroke="#d49b12"/>
+  <text class="text" x="735" y="117" text-anchor="middle">heated(soup)</text>
+  <path class="edge" d="M815 111 H905"/>
+  <rect class="node" x="905" y="87" width="220" height="48" fill="#ffdede" stroke="#da5656"/>
+  <text class="text" x="1015" y="117" text-anchor="middle">served_at(soup, table)</text>
+
+  <path class="edge" d="M600 190 V225"/>
+  <text class="label" x="620" y="215">ACHIEVED_BY</text>
+
+  <!-- Layer 2 -->
+  <rect class="box" x="20" y="230" width="1160" height="245" fill="#eaf9ec" stroke="#52a565"/>
+  <text class="title" x="600" y="263" text-anchor="middle">2. Sub-goal-owned Candidate Skill Subgraphs</text>
+
+  <rect x="45" y="280" width="340" height="165" rx="10" fill="#f8fff9" stroke="#399447" stroke-width="2"/>
+  <text class="label" x="215" y="307" text-anchor="middle">SkillSubgraph: retrieved</text>
+  <rect x="65" y="330" width="140" height="43" rx="7" fill="#ddeaff" stroke="#5684ce" stroke-width="1.5"/>
+  <text class="small" x="135" y="357" text-anchor="middle">PickFromShelf</text>
+  <rect x="225" y="330" width="140" height="43" rx="7" fill="#ddeaff" stroke="#5684ce" stroke-width="1.5"/>
+  <text class="small" x="295" y="357" text-anchor="middle">PickFromCabinet</text>
+  <path d="M135 373 H295" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 4"/>
+  <text class="tiny" x="215" y="397" text-anchor="middle">ALTERNATIVE_TO / FALLBACK_TO</text>
+  <text class="small" x="215" y="425" text-anchor="middle">achievers → retrieved(soup)</text>
+
+  <rect x="430" y="280" width="340" height="165" rx="10" fill="#f8fff9" stroke="#399447" stroke-width="2"/>
+  <text class="label" x="600" y="307" text-anchor="middle">SkillSubgraph: heated</text>
+  <rect x="450" y="330" width="140" height="43" rx="7" fill="#ddeaff" stroke="#5684ce" stroke-width="1.5"/>
+  <text class="small" x="520" y="357" text-anchor="middle">MicrowaveHeat</text>
+  <rect x="610" y="330" width="140" height="43" rx="7" fill="#ddeaff" stroke="#5684ce" stroke-width="1.5"/>
+  <text class="small" x="680" y="357" text-anchor="middle">StoveHeat</text>
+  <path d="M520 373 H680" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5 4"/>
+  <text class="tiny" x="600" y="397" text-anchor="middle">ALTERNATIVE_TO / FALLBACK_TO</text>
+  <text class="small" x="600" y="425" text-anchor="middle">achievers → heated(soup)</text>
+
+  <rect x="815" y="280" width="340" height="165" rx="10" fill="#f8fff9" stroke="#399447" stroke-width="2"/>
+  <text class="label" x="985" y="307" text-anchor="middle">SkillSubgraph: served_at</text>
+  <rect x="835" y="330" width="140" height="43" rx="7" fill="#ddeaff" stroke="#5684ce" stroke-width="1.5"/>
+  <text class="small" x="905" y="357" text-anchor="middle">NavigateToTable</text>
+  <rect x="995" y="330" width="140" height="43" rx="7" fill="#ddeaff" stroke="#5684ce" stroke-width="1.5"/>
+  <text class="small" x="1065" y="357" text-anchor="middle">ServeAtTable</text>
+  <path class="edge" d="M975 351 H989"/>
+  <text class="tiny" x="985" y="397" text-anchor="middle">internal ENABLES relation</text>
+  <text class="small" x="985" y="425" text-anchor="middle">achiever → served_at(soup, table)</text>
+
+  <path class="edge" d="M385 362 H424"/>
+  <path class="edge" d="M770 362 H809"/>
+  <text class="tiny" x="407" y="350" text-anchor="middle">cross</text>
+  <text class="tiny" x="792" y="350" text-anchor="middle">cross</text>
+  <text class="tiny" x="48" y="462">INITIAL GRAPH: MANUAL</text>
+  <text class="tiny" x="1152" y="462" text-anchor="end">NEW SKILL: INSERTION VLM PROPOSES ITS PLACEMENT</text>
+
+  <path class="edge" d="M600 475 V510"/>
+  <text class="small" x="620" y="497">FUTURE DECISION VLM: GRAPH + STATE → ONE NEXT SKILL</text>
+
+  <!-- Layer 3 -->
+  <rect class="box" x="20" y="515" width="1160" height="285" fill="#fff9df" stroke="#e0a928"/>
+  <text class="title" x="600" y="550" text-anchor="middle">3. Contracts (physical feasibility only)</text>
+
+  <g transform="translate(48,575)">
+    <rect width="255" height="190" rx="9" fill="#ffffff" stroke="#4e88c7" stroke-width="2"/>
+    <rect width="255" height="36" rx="9" fill="#dcecff"/>
+    <text class="label" x="127" y="25" text-anchor="middle">PickFromShelf</text>
+    <text class="small" x="15" y="59">Preconditions:</text><text class="tiny" x="25" y="78">• at(shelf)</text><text class="tiny" x="25" y="94">• visible(soup)</text>
+    <text class="small" x="15" y="117">Effects:</text><text class="tiny" x="25" y="136">• holding(soup)</text>
+    <text class="small" x="15" y="159">Policy:</text><text class="tiny" x="85" y="159">VLA (manipulation)</text>
+    <text class="small" x="15" y="179">Verify:</text><text class="tiny" x="70" y="179">is_grasped(soup)</text>
+  </g>
+  <g transform="translate(330,575)">
+    <rect width="255" height="190" rx="9" fill="#ffffff" stroke="#4e88c7" stroke-width="2"/>
+    <rect width="255" height="36" rx="9" fill="#dcecff"/>
+    <text class="label" x="127" y="25" text-anchor="middle">PickFromCabinet</text>
+    <text class="small" x="15" y="59">Preconditions:</text><text class="tiny" x="25" y="78">• at(cabinet)</text><text class="tiny" x="25" y="94">• cabinet_open</text>
+    <text class="small" x="15" y="117">Effects:</text><text class="tiny" x="25" y="136">• holding(soup)</text>
+    <text class="small" x="15" y="159">Policy:</text><text class="tiny" x="85" y="159">VLA (manipulation)</text>
+    <text class="small" x="15" y="179">Verify:</text><text class="tiny" x="70" y="179">is_grasped(soup)</text>
+  </g>
+  <g transform="translate(612,575)">
+    <rect width="255" height="190" rx="9" fill="#ffffff" stroke="#4e88c7" stroke-width="2"/>
+    <rect width="255" height="36" rx="9" fill="#dcecff"/>
+    <text class="label" x="127" y="25" text-anchor="middle">MicrowaveHeat</text>
+    <text class="small" x="15" y="59">Preconditions:</text><text class="tiny" x="25" y="78">• holding(soup)</text><text class="tiny" x="25" y="94">• microwave_accessible</text>
+    <text class="small" x="15" y="117">Effects:</text><text class="tiny" x="25" y="136">• heated(soup)</text>
+    <text class="small" x="15" y="159">Policy:</text><text class="tiny" x="85" y="159">State Machine</text>
+    <text class="small" x="15" y="179">Verify:</text><text class="tiny" x="70" y="179">temperature(soup) &gt; T</text>
+  </g>
+  <g transform="translate(894,575)">
+    <rect width="255" height="190" rx="9" fill="#ffffff" stroke="#4e88c7" stroke-width="2"/>
+    <rect width="255" height="36" rx="9" fill="#dcecff"/>
+    <text class="label" x="127" y="25" text-anchor="middle">StoveHeat</text>
+    <text class="small" x="15" y="59">Preconditions:</text><text class="tiny" x="25" y="78">• holding(soup)</text><text class="tiny" x="25" y="94">• stove_available</text>
+    <text class="small" x="15" y="117">Effects:</text><text class="tiny" x="25" y="136">• heated(soup)</text>
+    <text class="small" x="15" y="159">Policy:</text><text class="tiny" x="85" y="159">Script / Controller</text>
+    <text class="small" x="15" y="179">Verify:</text><text class="tiny" x="70" y="179">temperature(soup) &gt; T</text>
+  </g>
+
+  <path class="edge" d="M600 800 V835"/>
+  <text class="label" x="620" y="825">EXECUTED_BY (many-to-many)</text>
+
+  <!-- Layer 4 -->
+  <rect class="box" x="20" y="840" width="1160" height="115" fill="#f2eaff" stroke="#8660b4"/>
+  <text class="title" x="600" y="875" text-anchor="middle">4. Low-level Policies (VLA / DP / RL / controller / script)</text>
+  <g>
+    <rect x="45" y="893" width="200" height="44" rx="8" fill="#ecdfff" stroke="#8660b4"/>
+    <text class="label" x="145" y="921" text-anchor="middle">VLA</text>
+    <rect x="270" y="893" width="200" height="44" rx="8" fill="#dff3ff" stroke="#448bb8"/>
+    <text class="label" x="370" y="921" text-anchor="middle">Navigation</text>
+    <rect x="495" y="893" width="200" height="44" rx="8" fill="#e2f5e5" stroke="#52a565"/>
+    <text class="label" x="595" y="921" text-anchor="middle">Controller</text>
+    <rect x="720" y="893" width="200" height="44" rx="8" fill="#f0e7ff" stroke="#8660b4"/>
+    <text class="label" x="820" y="921" text-anchor="middle">Script</text>
+    <rect x="945" y="893" width="200" height="44" rx="8" fill="#f7e5ef" stroke="#ad6286"/>
+    <text class="label" x="1045" y="921" text-anchor="middle">State Machine</text>
+  </g>
+</svg>

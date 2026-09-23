@@ -1,0 +1,1819 @@
+{
+  "granularity": "coarse",
+  "layer1": {
+    "dependencies": [],
+    "goal": "Retrieve, deliver, or restore entities in a household environment",
+    "subgoals": [
+      {
+        "description": "Place the requested object at its destination.",
+        "id": "deliver",
+        "predicate": "at({object},{destination})"
+      },
+      {
+        "description": "Return an articulated source to its closed state.",
+        "id": "restore",
+        "predicate": "closed({source})"
+      },
+      {
+        "description": "Obtain and hold the requested object.",
+        "id": "retrieve",
+        "predicate": "holding({object})"
+      }
+    ]
+  },
+  "layer2": {
+    "_derived": true,
+    "cross_edges": [],
+    "edges": [
+      {
+        "relation": "enables",
+        "source": "navigate_surface_object",
+        "target": "pick_surface_object"
+      },
+      {
+        "relation": "enables",
+        "source": "relocalize_surface_object",
+        "target": "regrasp_surface_object"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "pick_surface_object",
+        "target": "regrasp_surface_object"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_fridge_source",
+        "target": "open_fridge_source"
+      },
+      {
+        "relation": "enables",
+        "source": "open_fridge_source",
+        "target": "navigate_fridge_object"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_fridge_object",
+        "target": "pick_fridge_object"
+      },
+      {
+        "relation": "enables",
+        "source": "open_fridge_source",
+        "target": "relocalize_fridge_object"
+      },
+      {
+        "relation": "enables",
+        "source": "relocalize_fridge_object",
+        "target": "regrasp_fridge_object"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "pick_fridge_object",
+        "target": "regrasp_fridge_object"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_drawer_source",
+        "target": "open_drawer_source"
+      },
+      {
+        "relation": "enables",
+        "source": "open_drawer_source",
+        "target": "navigate_drawer_object"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_drawer_object",
+        "target": "pick_drawer_object"
+      },
+      {
+        "relation": "enables",
+        "source": "open_drawer_source",
+        "target": "relocalize_drawer_object"
+      },
+      {
+        "relation": "enables",
+        "source": "relocalize_drawer_object",
+        "target": "regrasp_drawer_object"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "pick_drawer_object",
+        "target": "regrasp_drawer_object"
+      },
+      {
+        "relation": "alternative_to",
+        "source": "pick_surface_object",
+        "target": "pick_fridge_object"
+      },
+      {
+        "relation": "alternative_to",
+        "source": "pick_fridge_object",
+        "target": "pick_drawer_object"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_table",
+        "target": "place_on_table"
+      },
+      {
+        "relation": "enables",
+        "source": "reapproach_table",
+        "target": "recover_place_on_table"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "place_on_table",
+        "target": "recover_place_on_table"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_counter",
+        "target": "place_on_counter"
+      },
+      {
+        "relation": "enables",
+        "source": "reapproach_counter",
+        "target": "recover_place_on_counter"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "place_on_counter",
+        "target": "recover_place_on_counter"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_fridge_for_delivery",
+        "target": "open_fridge_for_delivery"
+      },
+      {
+        "relation": "enables",
+        "source": "open_fridge_for_delivery",
+        "target": "navigate_fridge_interior"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_fridge_interior",
+        "target": "place_in_fridge"
+      },
+      {
+        "relation": "enables",
+        "source": "open_fridge_for_delivery",
+        "target": "reapproach_fridge_interior"
+      },
+      {
+        "relation": "enables",
+        "source": "reapproach_fridge_interior",
+        "target": "recover_place_in_fridge"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "place_in_fridge",
+        "target": "recover_place_in_fridge"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_drawer_for_delivery",
+        "target": "open_drawer_for_delivery"
+      },
+      {
+        "relation": "enables",
+        "source": "open_drawer_for_delivery",
+        "target": "navigate_drawer_interior"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_drawer_interior",
+        "target": "place_in_drawer"
+      },
+      {
+        "relation": "enables",
+        "source": "open_drawer_for_delivery",
+        "target": "reapproach_drawer_interior"
+      },
+      {
+        "relation": "enables",
+        "source": "reapproach_drawer_interior",
+        "target": "recover_place_in_drawer"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "place_in_drawer",
+        "target": "recover_place_in_drawer"
+      },
+      {
+        "relation": "alternative_to",
+        "source": "place_on_table",
+        "target": "place_on_counter"
+      },
+      {
+        "relation": "alternative_to",
+        "source": "place_on_counter",
+        "target": "place_in_fridge"
+      },
+      {
+        "relation": "alternative_to",
+        "source": "place_in_fridge",
+        "target": "place_in_drawer"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_fridge_for_restore",
+        "target": "close_fridge"
+      },
+      {
+        "relation": "enables",
+        "source": "reposition_fridge",
+        "target": "recover_close_fridge"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "close_fridge",
+        "target": "recover_close_fridge"
+      },
+      {
+        "relation": "enables",
+        "source": "navigate_drawer_for_restore",
+        "target": "close_drawer"
+      },
+      {
+        "relation": "enables",
+        "source": "reposition_drawer",
+        "target": "recover_close_drawer"
+      },
+      {
+        "relation": "fallback_to",
+        "source": "close_drawer",
+        "target": "recover_close_drawer"
+      },
+      {
+        "relation": "alternative_to",
+        "source": "close_fridge",
+        "target": "close_drawer"
+      }
+    ],
+    "nodes": [
+      {
+        "achieves": [
+          "restore"
+        ],
+        "arguments": {
+          "articulation": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.close.all",
+        "id": "close_drawer"
+      },
+      {
+        "achieves": [
+          "restore"
+        ],
+        "arguments": {
+          "articulation": "fridge"
+        },
+        "contract_id": "mshab.granularity.close.all",
+        "id": "close_fridge"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "countertop"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_counter"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_drawer_for_delivery"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_drawer_for_restore"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_drawer_interior"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "{object}"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_drawer_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_drawer_source"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "fridge"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_fridge_for_delivery"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "fridge"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_fridge_for_restore"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "fridge"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_fridge_interior"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "{object}"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_fridge_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "fridge"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_fridge_source"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "{object}"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_surface_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "dining_table"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "navigate_table"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "articulation": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.open.all",
+        "id": "open_drawer_for_delivery"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "articulation": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.open.all",
+        "id": "open_drawer_source"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "articulation": "fridge"
+        },
+        "contract_id": "mshab.granularity.open.all",
+        "id": "open_fridge_for_delivery"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "articulation": "fridge"
+        },
+        "contract_id": "mshab.granularity.open.all",
+        "id": "open_fridge_source"
+      },
+      {
+        "achieves": [
+          "retrieve"
+        ],
+        "arguments": {
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.pick.all",
+        "id": "pick_drawer_object"
+      },
+      {
+        "achieves": [
+          "retrieve"
+        ],
+        "arguments": {
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.pick.all",
+        "id": "pick_fridge_object"
+      },
+      {
+        "achieves": [
+          "retrieve"
+        ],
+        "arguments": {
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.pick.all",
+        "id": "pick_surface_object"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "kitchen_counter",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "place_in_drawer"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "fridge",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "place_in_fridge"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "countertop",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "place_on_counter"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "dining_table",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "place_on_table"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "countertop"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "reapproach_counter"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "reapproach_drawer_interior"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "fridge"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "reapproach_fridge_interior"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "dining_table"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "reapproach_table"
+      },
+      {
+        "achieves": [
+          "restore"
+        ],
+        "arguments": {
+          "articulation": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.close.all",
+        "id": "recover_close_drawer"
+      },
+      {
+        "achieves": [
+          "restore"
+        ],
+        "arguments": {
+          "articulation": "fridge"
+        },
+        "contract_id": "mshab.granularity.close.all",
+        "id": "recover_close_fridge"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "kitchen_counter",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "recover_place_in_drawer"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "fridge",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "recover_place_in_fridge"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "countertop",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "recover_place_on_counter"
+      },
+      {
+        "achieves": [
+          "deliver"
+        ],
+        "arguments": {
+          "destination": "dining_table",
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.place.all",
+        "id": "recover_place_on_table"
+      },
+      {
+        "achieves": [
+          "retrieve"
+        ],
+        "arguments": {
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.pick.all",
+        "id": "regrasp_drawer_object"
+      },
+      {
+        "achieves": [
+          "retrieve"
+        ],
+        "arguments": {
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.pick.all",
+        "id": "regrasp_fridge_object"
+      },
+      {
+        "achieves": [
+          "retrieve"
+        ],
+        "arguments": {
+          "object": "{object}"
+        },
+        "contract_id": "mshab.granularity.pick.all",
+        "id": "regrasp_surface_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "{object}"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "relocalize_drawer_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "{object}"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "relocalize_fridge_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "{object}"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "relocalize_surface_object"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "reposition_drawer"
+      },
+      {
+        "achieves": [],
+        "arguments": {
+          "goal": "fridge"
+        },
+        "contract_id": "mshab.granularity.navigate.all",
+        "id": "reposition_fridge"
+      }
+    ],
+    "semantic_strategies": {
+      "deliver": [
+        {
+          "applicable_when": "destination is a dining table",
+          "description": "Navigate to the destination and place the object; re-approach and retry with another Place skill on failure.",
+          "fallback_achiever": "recover_place_on_table",
+          "id": "deliver_to_table",
+          "label": "Deliver to table",
+          "node_ids": [
+            "navigate_table",
+            "place_on_table",
+            "reapproach_table",
+            "recover_place_on_table"
+          ],
+          "primary_achiever": "place_on_table",
+          "subgoal_id": "deliver"
+        },
+        {
+          "applicable_when": "destination is an open countertop",
+          "description": "Navigate to the destination and place the object; re-approach and retry with another Place skill on failure.",
+          "fallback_achiever": "recover_place_on_counter",
+          "id": "deliver_to_counter",
+          "label": "Deliver to counter",
+          "node_ids": [
+            "navigate_counter",
+            "place_on_counter",
+            "reapproach_counter",
+            "recover_place_on_counter"
+          ],
+          "primary_achiever": "place_on_counter",
+          "subgoal_id": "deliver"
+        },
+        {
+          "applicable_when": "destination is inside a fridge",
+          "description": "Navigate to and open the destination container, place the object inside, then re-approach and retry on failure.",
+          "fallback_achiever": "recover_place_in_fridge",
+          "id": "deliver_to_fridge",
+          "label": "Deliver into fridge",
+          "node_ids": [
+            "navigate_fridge_for_delivery",
+            "open_fridge_for_delivery",
+            "navigate_fridge_interior",
+            "place_in_fridge",
+            "reapproach_fridge_interior",
+            "recover_place_in_fridge"
+          ],
+          "primary_achiever": "place_in_fridge",
+          "subgoal_id": "deliver"
+        },
+        {
+          "applicable_when": "destination is inside a counter drawer",
+          "description": "Navigate to and open the destination container, place the object inside, then re-approach and retry on failure.",
+          "fallback_achiever": "recover_place_in_drawer",
+          "id": "deliver_to_drawer",
+          "label": "Deliver into drawer",
+          "node_ids": [
+            "navigate_drawer_for_delivery",
+            "open_drawer_for_delivery",
+            "navigate_drawer_interior",
+            "place_in_drawer",
+            "reapproach_drawer_interior",
+            "recover_place_in_drawer"
+          ],
+          "primary_achiever": "place_in_drawer",
+          "subgoal_id": "deliver"
+        }
+      ],
+      "restore": [
+        {
+          "applicable_when": "the used source or destination is a fridge",
+          "description": "Navigate to and close the articulation; reposition and use a second Close skill if the first close fails.",
+          "fallback_achiever": "recover_close_fridge",
+          "id": "restore_fridge",
+          "label": "Restore fridge",
+          "node_ids": [
+            "navigate_fridge_for_restore",
+            "close_fridge",
+            "reposition_fridge",
+            "recover_close_fridge"
+          ],
+          "primary_achiever": "close_fridge",
+          "subgoal_id": "restore"
+        },
+        {
+          "applicable_when": "the used source or destination is a counter drawer",
+          "description": "Navigate to and close the articulation; reposition and use a second Close skill if the first close fails.",
+          "fallback_achiever": "recover_close_drawer",
+          "id": "restore_drawer",
+          "label": "Restore drawer",
+          "node_ids": [
+            "navigate_drawer_for_restore",
+            "close_drawer",
+            "reposition_drawer",
+            "recover_close_drawer"
+          ],
+          "primary_achiever": "close_drawer",
+          "subgoal_id": "restore"
+        }
+      ],
+      "retrieve": [
+        {
+          "applicable_when": "object is exposed on a reachable surface",
+          "description": "Navigate directly to an exposed object and grasp it; relocalize and regrasp if the first grasp fails.",
+          "fallback_achiever": "regrasp_surface_object",
+          "id": "retrieve_surface",
+          "label": "Retrieve from open surface",
+          "node_ids": [
+            "navigate_surface_object",
+            "pick_surface_object",
+            "relocalize_surface_object",
+            "regrasp_surface_object"
+          ],
+          "primary_achiever": "pick_surface_object",
+          "subgoal_id": "retrieve"
+        },
+        {
+          "applicable_when": "the object is stored in a fridge",
+          "description": "Navigate to and open the source, approach the object, and grasp it; relocalize and regrasp after a failed grasp.",
+          "fallback_achiever": "regrasp_fridge_object",
+          "id": "retrieve_from_fridge",
+          "label": "Retrieve from fridge",
+          "node_ids": [
+            "navigate_fridge_source",
+            "open_fridge_source",
+            "navigate_fridge_object",
+            "pick_fridge_object",
+            "relocalize_fridge_object",
+            "regrasp_fridge_object"
+          ],
+          "primary_achiever": "pick_fridge_object",
+          "subgoal_id": "retrieve"
+        },
+        {
+          "applicable_when": "the object is stored in a counter drawer",
+          "description": "Navigate to and open the source, approach the object, and grasp it; relocalize and regrasp after a failed grasp.",
+          "fallback_achiever": "regrasp_drawer_object",
+          "id": "retrieve_from_drawer",
+          "label": "Retrieve from drawer",
+          "node_ids": [
+            "navigate_drawer_source",
+            "open_drawer_source",
+            "navigate_drawer_object",
+            "pick_drawer_object",
+            "relocalize_drawer_object",
+            "regrasp_drawer_object"
+          ],
+          "primary_achiever": "pick_drawer_object",
+          "subgoal_id": "retrieve"
+        }
+      ]
+    },
+    "subgoal_graph": {
+      "dependencies": [],
+      "goal": "Retrieve, deliver, or restore entities in a household environment",
+      "subgoals": [
+        {
+          "description": "Place the requested object at its destination.",
+          "id": "deliver",
+          "predicate": "at({object},{destination})"
+        },
+        {
+          "description": "Return an articulated source to its closed state.",
+          "id": "restore",
+          "predicate": "closed({source})"
+        },
+        {
+          "description": "Obtain and hold the requested object.",
+          "id": "retrieve",
+          "predicate": "holding({object})"
+        }
+      ]
+    },
+    "subgraphs": [
+      {
+        "achiever_nodes": [
+          "place_in_drawer",
+          "place_in_fridge",
+          "place_on_counter",
+          "place_on_table",
+          "recover_place_in_drawer",
+          "recover_place_in_fridge",
+          "recover_place_on_counter",
+          "recover_place_on_table"
+        ],
+        "edges": [
+          {
+            "relation": "enables",
+            "source": "navigate_table",
+            "target": "place_on_table"
+          },
+          {
+            "relation": "enables",
+            "source": "reapproach_table",
+            "target": "recover_place_on_table"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "place_on_table",
+            "target": "recover_place_on_table"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_counter",
+            "target": "place_on_counter"
+          },
+          {
+            "relation": "enables",
+            "source": "reapproach_counter",
+            "target": "recover_place_on_counter"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "place_on_counter",
+            "target": "recover_place_on_counter"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_fridge_for_delivery",
+            "target": "open_fridge_for_delivery"
+          },
+          {
+            "relation": "enables",
+            "source": "open_fridge_for_delivery",
+            "target": "navigate_fridge_interior"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_fridge_interior",
+            "target": "place_in_fridge"
+          },
+          {
+            "relation": "enables",
+            "source": "open_fridge_for_delivery",
+            "target": "reapproach_fridge_interior"
+          },
+          {
+            "relation": "enables",
+            "source": "reapproach_fridge_interior",
+            "target": "recover_place_in_fridge"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "place_in_fridge",
+            "target": "recover_place_in_fridge"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_drawer_for_delivery",
+            "target": "open_drawer_for_delivery"
+          },
+          {
+            "relation": "enables",
+            "source": "open_drawer_for_delivery",
+            "target": "navigate_drawer_interior"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_drawer_interior",
+            "target": "place_in_drawer"
+          },
+          {
+            "relation": "enables",
+            "source": "open_drawer_for_delivery",
+            "target": "reapproach_drawer_interior"
+          },
+          {
+            "relation": "enables",
+            "source": "reapproach_drawer_interior",
+            "target": "recover_place_in_drawer"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "place_in_drawer",
+            "target": "recover_place_in_drawer"
+          },
+          {
+            "relation": "alternative_to",
+            "source": "place_on_table",
+            "target": "place_on_counter"
+          },
+          {
+            "relation": "alternative_to",
+            "source": "place_on_counter",
+            "target": "place_in_fridge"
+          },
+          {
+            "relation": "alternative_to",
+            "source": "place_in_fridge",
+            "target": "place_in_drawer"
+          }
+        ],
+        "execution_order": [
+          "navigate_counter",
+          "navigate_drawer_for_delivery",
+          "navigate_fridge_for_delivery",
+          "navigate_table",
+          "open_drawer_for_delivery",
+          "navigate_drawer_interior",
+          "open_fridge_for_delivery",
+          "navigate_fridge_interior",
+          "place_in_drawer",
+          "place_in_fridge",
+          "place_on_counter",
+          "place_on_table",
+          "reapproach_counter",
+          "reapproach_drawer_interior",
+          "reapproach_fridge_interior",
+          "reapproach_table",
+          "recover_place_in_drawer",
+          "recover_place_in_fridge",
+          "recover_place_on_counter",
+          "recover_place_on_table"
+        ],
+        "nodes": [
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "countertop"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_counter"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_drawer_for_delivery"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_drawer_interior"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "fridge"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_fridge_for_delivery"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "fridge"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_fridge_interior"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "dining_table"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_table"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "articulation": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.open.all",
+            "id": "open_drawer_for_delivery"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "articulation": "fridge"
+            },
+            "contract_id": "mshab.granularity.open.all",
+            "id": "open_fridge_for_delivery"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "kitchen_counter",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "place_in_drawer"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "fridge",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "place_in_fridge"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "countertop",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "place_on_counter"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "dining_table",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "place_on_table"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "countertop"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "reapproach_counter"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "reapproach_drawer_interior"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "fridge"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "reapproach_fridge_interior"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "dining_table"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "reapproach_table"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "kitchen_counter",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "recover_place_in_drawer"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "fridge",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "recover_place_in_fridge"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "countertop",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "recover_place_on_counter"
+          },
+          {
+            "achieves": [
+              "deliver"
+            ],
+            "arguments": {
+              "destination": "dining_table",
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.place.all",
+            "id": "recover_place_on_table"
+          }
+        ],
+        "subgoal_id": "deliver"
+      },
+      {
+        "achiever_nodes": [
+          "close_drawer",
+          "close_fridge",
+          "recover_close_drawer",
+          "recover_close_fridge"
+        ],
+        "edges": [
+          {
+            "relation": "enables",
+            "source": "navigate_fridge_for_restore",
+            "target": "close_fridge"
+          },
+          {
+            "relation": "enables",
+            "source": "reposition_fridge",
+            "target": "recover_close_fridge"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "close_fridge",
+            "target": "recover_close_fridge"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_drawer_for_restore",
+            "target": "close_drawer"
+          },
+          {
+            "relation": "enables",
+            "source": "reposition_drawer",
+            "target": "recover_close_drawer"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "close_drawer",
+            "target": "recover_close_drawer"
+          },
+          {
+            "relation": "alternative_to",
+            "source": "close_fridge",
+            "target": "close_drawer"
+          }
+        ],
+        "execution_order": [
+          "navigate_drawer_for_restore",
+          "close_drawer",
+          "navigate_fridge_for_restore",
+          "close_fridge",
+          "reposition_drawer",
+          "recover_close_drawer",
+          "reposition_fridge",
+          "recover_close_fridge"
+        ],
+        "nodes": [
+          {
+            "achieves": [
+              "restore"
+            ],
+            "arguments": {
+              "articulation": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.close.all",
+            "id": "close_drawer"
+          },
+          {
+            "achieves": [
+              "restore"
+            ],
+            "arguments": {
+              "articulation": "fridge"
+            },
+            "contract_id": "mshab.granularity.close.all",
+            "id": "close_fridge"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_drawer_for_restore"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "fridge"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_fridge_for_restore"
+          },
+          {
+            "achieves": [
+              "restore"
+            ],
+            "arguments": {
+              "articulation": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.close.all",
+            "id": "recover_close_drawer"
+          },
+          {
+            "achieves": [
+              "restore"
+            ],
+            "arguments": {
+              "articulation": "fridge"
+            },
+            "contract_id": "mshab.granularity.close.all",
+            "id": "recover_close_fridge"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "reposition_drawer"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "fridge"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "reposition_fridge"
+          }
+        ],
+        "subgoal_id": "restore"
+      },
+      {
+        "achiever_nodes": [
+          "pick_drawer_object",
+          "pick_fridge_object",
+          "pick_surface_object",
+          "regrasp_drawer_object",
+          "regrasp_fridge_object",
+          "regrasp_surface_object"
+        ],
+        "edges": [
+          {
+            "relation": "enables",
+            "source": "navigate_surface_object",
+            "target": "pick_surface_object"
+          },
+          {
+            "relation": "enables",
+            "source": "relocalize_surface_object",
+            "target": "regrasp_surface_object"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "pick_surface_object",
+            "target": "regrasp_surface_object"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_fridge_source",
+            "target": "open_fridge_source"
+          },
+          {
+            "relation": "enables",
+            "source": "open_fridge_source",
+            "target": "navigate_fridge_object"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_fridge_object",
+            "target": "pick_fridge_object"
+          },
+          {
+            "relation": "enables",
+            "source": "open_fridge_source",
+            "target": "relocalize_fridge_object"
+          },
+          {
+            "relation": "enables",
+            "source": "relocalize_fridge_object",
+            "target": "regrasp_fridge_object"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "pick_fridge_object",
+            "target": "regrasp_fridge_object"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_drawer_source",
+            "target": "open_drawer_source"
+          },
+          {
+            "relation": "enables",
+            "source": "open_drawer_source",
+            "target": "navigate_drawer_object"
+          },
+          {
+            "relation": "enables",
+            "source": "navigate_drawer_object",
+            "target": "pick_drawer_object"
+          },
+          {
+            "relation": "enables",
+            "source": "open_drawer_source",
+            "target": "relocalize_drawer_object"
+          },
+          {
+            "relation": "enables",
+            "source": "relocalize_drawer_object",
+            "target": "regrasp_drawer_object"
+          },
+          {
+            "relation": "fallback_to",
+            "source": "pick_drawer_object",
+            "target": "regrasp_drawer_object"
+          },
+          {
+            "relation": "alternative_to",
+            "source": "pick_surface_object",
+            "target": "pick_fridge_object"
+          },
+          {
+            "relation": "alternative_to",
+            "source": "pick_fridge_object",
+            "target": "pick_drawer_object"
+          }
+        ],
+        "execution_order": [
+          "navigate_drawer_source",
+          "navigate_fridge_source",
+          "navigate_surface_object",
+          "open_drawer_source",
+          "navigate_drawer_object",
+          "open_fridge_source",
+          "navigate_fridge_object",
+          "pick_drawer_object",
+          "pick_fridge_object",
+          "pick_surface_object",
+          "relocalize_drawer_object",
+          "regrasp_drawer_object",
+          "relocalize_fridge_object",
+          "regrasp_fridge_object",
+          "relocalize_surface_object",
+          "regrasp_surface_object"
+        ],
+        "nodes": [
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "{object}"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_drawer_object"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_drawer_source"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "{object}"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_fridge_object"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "fridge"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_fridge_source"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "{object}"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "navigate_surface_object"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "articulation": "kitchen_counter"
+            },
+            "contract_id": "mshab.granularity.open.all",
+            "id": "open_drawer_source"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "articulation": "fridge"
+            },
+            "contract_id": "mshab.granularity.open.all",
+            "id": "open_fridge_source"
+          },
+          {
+            "achieves": [
+              "retrieve"
+            ],
+            "arguments": {
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.pick.all",
+            "id": "pick_drawer_object"
+          },
+          {
+            "achieves": [
+              "retrieve"
+            ],
+            "arguments": {
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.pick.all",
+            "id": "pick_fridge_object"
+          },
+          {
+            "achieves": [
+              "retrieve"
+            ],
+            "arguments": {
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.pick.all",
+            "id": "pick_surface_object"
+          },
+          {
+            "achieves": [
+              "retrieve"
+            ],
+            "arguments": {
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.pick.all",
+            "id": "regrasp_drawer_object"
+          },
+          {
+            "achieves": [
+              "retrieve"
+            ],
+            "arguments": {
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.pick.all",
+            "id": "regrasp_fridge_object"
+          },
+          {
+            "achieves": [
+              "retrieve"
+            ],
+            "arguments": {
+              "object": "{object}"
+            },
+            "contract_id": "mshab.granularity.pick.all",
+            "id": "regrasp_surface_object"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "{object}"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "relocalize_drawer_object"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "{object}"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "relocalize_fridge_object"
+          },
+          {
+            "achieves": [],
+            "arguments": {
+              "goal": "{object}"
+            },
+            "contract_id": "mshab.granularity.navigate.all",
+            "id": "relocalize_surface_object"
+          }
+        ],
+        "subgoal_id": "retrieve"
+      }
+    ],
+    "task": "granularity"
+  },
+  "layer2_to_layer3": {
+    "cardinality": "many_to_one",
+    "references": [
+      {
+        "relation": "references",
+        "source": "close_drawer",
+        "target": "mshab.granularity.close.all"
+      },
+      {
+        "relation": "references",
+        "source": "close_fridge",
+        "target": "mshab.granularity.close.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_counter",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_drawer_for_delivery",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_drawer_for_restore",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_drawer_interior",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_drawer_object",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_drawer_source",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_fridge_for_delivery",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_fridge_for_restore",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_fridge_interior",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_fridge_object",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_fridge_source",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_surface_object",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "navigate_table",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "open_drawer_for_delivery",
+        "target": "mshab.granularity.open.all"
+      },
+      {
+        "relation": "references",
+        "source": "open_drawer_source",
+        "target": "mshab.granularity.open.all"
+      },
+      {
+        "relation": "references",
+        "source": "open_fridge_for_delivery",
+        "target": "mshab.granularity.open.all"
+      },
+      {
+        "relation": "references",
+        "source": "open_fridge_source",
+        "target": "mshab.granularity.open.all"
+      },
+      {
+        "relation": "references",
+        "source": "pick_drawer_object",
+        "target": "mshab.granularity.pick.all"
+      },
+      {
+        "relation": "references",
+        "source": "pick_fridge_object",
+        "target": "mshab.granularity.pick.all"
+      },
+      {
+        "relation": "references",
+        "source": "pick_surface_object",
+        "target": "mshab.granularity.pick.all"
+      },
+      {
+        "relation": "references",
+        "source": "place_in_drawer",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "place_in_fridge",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "place_on_counter",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "place_on_table",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "reapproach_counter",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "reapproach_drawer_interior",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "reapproach_fridge_interior",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "reapproach_table",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "recover_close_drawer",
+        "target": "mshab.granularity.close.all"
+      },
+      {
+        "relation": "references",
+        "source": "recover_close_fridge",
+        "target": "mshab.granularity.close.all"
+      },
+      {
+        "relation": "references",
+        "source": "recover_place_in_drawer",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "recover_place_in_fridge",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "recover_place_on_counter",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "recover_place_on_table",
+        "target": "mshab.granularity.place.all"
+      },
+      {
+        "relation": "references",
+        "source": "regrasp_drawer_object",
+        "target": "mshab.granularity.pick.all"
+      },
+      {
+        "relation": "references",
+        "source": "regrasp_fridge_object",
+        "target": "mshab.granularity.pick.all"
+      },
+      {
+        "relation": "references",
+        "source": "regrasp_surface_object",
+        "target": "mshab.granularity.pick.all"
+      },
+      {
+        "relation": "references",
+        "source": "relocalize_drawer_object",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "relocalize_fridge_object",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "relocalize_surface_object",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "reposition_drawer",
+        "target": "mshab.granularity.navigate.all"
+      },
+      {
+        "relation": "references",
+        "source": "reposition_fridge",
+        "target": "mshab.granularity.navigate.all"
+      }
+    ]
+  },
+  "layer3": {
+    "contracts": [
+      {
+        "contract_type": "close",
+        "id": "mshab.granularity.close.all"
+      },
+      {
+        "contract_type": "navigate",
+        "id": "mshab.granularity.navigate.all"
+      },
+      {
+        "contract_type": "open",
+        "id": "mshab.granularity.open.all"
+      },
+      {
+        "contract_type": "pick",
+        "id": "mshab.granularity.pick.all"
+      },
+      {
+        "contract_type": "place",
+        "id": "mshab.granularity.place.all"
+      }
+    ]
+  },
+  "schema_version": "mshab.granularity-coarse-higher-layers.v3",
+  "semantics": {
+    "alternative_to": "different semantic contexts that achieve the same SubGoal",
+    "execution_protocol": "select one SemanticStrategy for an active SubGoal, project its execution view, then resolve its directed fallback chain",
+    "fallback_to": "a failed primary SkillNode transitions to another recovery SkillNode",
+    "layer1_relations": "none",
+    "layer1_to_layer2": "one_subgoal_to_one_skill_subgraph",
+    "policy_ids_in_higher_layers": false,
+    "skill_node_to_contract": "many_to_one",
+    "task_classification": "none"
+  },
+  "summary": {
+    "contract_usage": {
+      "mshab.granularity.close.all": 4,
+      "mshab.granularity.navigate.all": 22,
+      "mshab.granularity.open.all": 4,
+      "mshab.granularity.pick.all": 6,
+      "mshab.granularity.place.all": 8
+    },
+    "cross_subgraph_edges": 0,
+    "semantic_strategies": 9,
+    "skill_nodes": 44,
+    "skill_subgraphs": 3,
+    "subgoal_dependencies": 0,
+    "subgoals": 3
+  }
+}

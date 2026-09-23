@@ -1,0 +1,986 @@
+{
+  "connections": [
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.navigate.all",
+      "target_contract_id": "mshab.granularity.navigate.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.002_master_chef_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.003_cracker_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.004_sugar_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.005_tomato_soup_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.007_tuna_fish_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.008_pudding_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.009_gelatin_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.010_potted_meat_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.024_bowl",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.pick.all",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.002_master_chef_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.003_cracker_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.004_sugar_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.005_tomato_soup_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.007_tuna_fish_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.008_pudding_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.009_gelatin_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.010_potted_meat_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.024_bowl",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.prepare_groceries.place.all",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.close.fridge",
+      "target_contract_id": "mshab.granularity.close.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.close.kitchen_counter",
+      "target_contract_id": "mshab.granularity.close.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.navigate.all",
+      "target_contract_id": "mshab.granularity.navigate.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.open.fridge",
+      "target_contract_id": "mshab.granularity.open.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.open.kitchen_counter",
+      "target_contract_id": "mshab.granularity.open.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.pick.013_apple",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.pick.024_bowl",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.pick.all",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.place.013_apple",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.place.024_bowl",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.set_table.place.all",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.navigate.all",
+      "target_contract_id": "mshab.granularity.navigate.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.002_master_chef_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.003_cracker_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.004_sugar_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.005_tomato_soup_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.007_tuna_fish_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.008_pudding_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.009_gelatin_box",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.010_potted_meat_can",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.024_bowl",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.pick.all",
+      "target_contract_id": "mshab.granularity.pick.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.002_master_chef_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.003_cracker_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.004_sugar_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.005_tomato_soup_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.007_tuna_fish_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.008_pudding_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.009_gelatin_box",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.010_potted_meat_can",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.024_bowl",
+      "target_contract_id": "mshab.granularity.place.all"
+    },
+    {
+      "relation": "EXECUTES",
+      "source_policy_id": "rl.tidy_house.place.all",
+      "target_contract_id": "mshab.granularity.place.all"
+    }
+  ],
+  "experiment": "graph_granularity",
+  "layer3_contracts": [
+    {
+      "contract_type": "navigate",
+      "deletes": [],
+      "description": "Move to a pose from which the grounded goal is reachable.",
+      "effects": [
+        "reachable({goal})"
+      ],
+      "execution": {
+        "env_id": "NavigateSubtaskTrain-v0",
+        "max_episode_steps": 1000
+      },
+      "failure_modes": [
+        "navigation_timeout",
+        "collision_limit"
+      ],
+      "id": "mshab.granularity.navigate.all",
+      "invariants": [],
+      "name": "navigate.all",
+      "parameters": [
+        {
+          "description": "",
+          "name": "goal",
+          "required": true,
+          "type": "entity"
+        }
+      ],
+      "policy_count": 3,
+      "preconditions": [
+        "present({goal})"
+      ],
+      "target": "all",
+      "target_parameter": "goal",
+      "task": "granularity",
+      "verification": [
+        "reachable({goal})"
+      ]
+    },
+    {
+      "contract_type": "pick",
+      "deletes": [
+        "gripper_empty()"
+      ],
+      "description": "Grasp and hold one grounded object.",
+      "effects": [
+        "holding({object})"
+      ],
+      "execution": {
+        "env_id": "PickSubtaskTrain-v0",
+        "max_episode_steps": 200
+      },
+      "failure_modes": [
+        "grasp_failed",
+        "object_dropped",
+        "force_limit"
+      ],
+      "id": "mshab.granularity.pick.all",
+      "invariants": [
+        "collision_safe()"
+      ],
+      "name": "pick.all",
+      "parameters": [
+        {
+          "description": "",
+          "name": "object",
+          "required": true,
+          "type": "entity"
+        }
+      ],
+      "policy_count": 23,
+      "preconditions": [
+        "reachable({object})",
+        "gripper_empty()"
+      ],
+      "target": "all",
+      "target_parameter": "object",
+      "task": "granularity",
+      "verification": [
+        "holding({object})"
+      ]
+    },
+    {
+      "contract_type": "place",
+      "deletes": [
+        "holding({object})"
+      ],
+      "description": "Place a held object at a grounded destination.",
+      "effects": [
+        "at({object},{destination})",
+        "gripper_empty()"
+      ],
+      "execution": {
+        "env_id": "PlaceSubtaskTrain-v0",
+        "max_episode_steps": 200
+      },
+      "failure_modes": [
+        "placement_failed",
+        "object_dropped",
+        "force_limit"
+      ],
+      "id": "mshab.granularity.place.all",
+      "invariants": [
+        "collision_safe()"
+      ],
+      "name": "place.all",
+      "parameters": [
+        {
+          "description": "",
+          "name": "object",
+          "required": true,
+          "type": "entity"
+        },
+        {
+          "description": "",
+          "name": "destination",
+          "required": true,
+          "type": "location"
+        }
+      ],
+      "policy_count": 23,
+      "preconditions": [
+        "holding({object})",
+        "reachable({destination})"
+      ],
+      "target": "all",
+      "target_parameter": "object",
+      "task": "granularity",
+      "verification": [
+        "at({object},{destination})"
+      ]
+    },
+    {
+      "contract_type": "open",
+      "deletes": [
+        "closed({articulation})"
+      ],
+      "description": "Open one grounded articulation such as a fridge or drawer.",
+      "effects": [
+        "open({articulation})"
+      ],
+      "execution": {
+        "env_id": "OpenSubtaskTrain-v0",
+        "max_episode_steps": 200
+      },
+      "failure_modes": [
+        "handle_not_grasped",
+        "joint_blocked",
+        "force_limit"
+      ],
+      "id": "mshab.granularity.open.all",
+      "invariants": [
+        "collision_safe()"
+      ],
+      "name": "open.all",
+      "parameters": [
+        {
+          "description": "",
+          "name": "articulation",
+          "required": true,
+          "type": "articulation"
+        }
+      ],
+      "policy_count": 2,
+      "preconditions": [
+        "reachable({articulation})",
+        "closed({articulation})"
+      ],
+      "target": "all",
+      "target_parameter": "articulation",
+      "task": "granularity",
+      "verification": [
+        "open({articulation})"
+      ]
+    },
+    {
+      "contract_type": "close",
+      "deletes": [
+        "open({articulation})"
+      ],
+      "description": "Close one grounded articulation such as a fridge or drawer.",
+      "effects": [
+        "closed({articulation})"
+      ],
+      "execution": {
+        "env_id": "CloseSubtaskTrain-v0",
+        "max_episode_steps": 200
+      },
+      "failure_modes": [
+        "handle_not_grasped",
+        "joint_blocked",
+        "force_limit"
+      ],
+      "id": "mshab.granularity.close.all",
+      "invariants": [
+        "collision_safe()"
+      ],
+      "name": "close.all",
+      "parameters": [
+        {
+          "description": "",
+          "name": "articulation",
+          "required": true,
+          "type": "articulation"
+        }
+      ],
+      "policy_count": 2,
+      "preconditions": [
+        "reachable({articulation})",
+        "open({articulation})"
+      ],
+      "target": "all",
+      "target_parameter": "articulation",
+      "task": "granularity",
+      "verification": [
+        "closed({articulation})"
+      ]
+    }
+  ],
+  "layer4_policies": [
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/navigate/all",
+      "contract_type": "navigate",
+      "family": "rl",
+      "id": "rl.prepare_groceries.navigate.all",
+      "short_id": "PG.navigate.all",
+      "target": "all",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/002_master_chef_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.002_master_chef_can",
+      "short_id": "PG.pick.002_master_chef_can",
+      "target": "002_master_chef_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/003_cracker_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.003_cracker_box",
+      "short_id": "PG.pick.003_cracker_box",
+      "target": "003_cracker_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/004_sugar_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.004_sugar_box",
+      "short_id": "PG.pick.004_sugar_box",
+      "target": "004_sugar_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/005_tomato_soup_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.005_tomato_soup_can",
+      "short_id": "PG.pick.005_tomato_soup_can",
+      "target": "005_tomato_soup_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/007_tuna_fish_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.007_tuna_fish_can",
+      "short_id": "PG.pick.007_tuna_fish_can",
+      "target": "007_tuna_fish_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/008_pudding_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.008_pudding_box",
+      "short_id": "PG.pick.008_pudding_box",
+      "target": "008_pudding_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/009_gelatin_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.009_gelatin_box",
+      "short_id": "PG.pick.009_gelatin_box",
+      "target": "009_gelatin_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/010_potted_meat_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.010_potted_meat_can",
+      "short_id": "PG.pick.010_potted_meat_can",
+      "target": "010_potted_meat_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/024_bowl",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.024_bowl",
+      "short_id": "PG.pick.024_bowl",
+      "target": "024_bowl",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/pick/all",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.prepare_groceries.pick.all",
+      "short_id": "PG.pick.all",
+      "target": "all",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/002_master_chef_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.002_master_chef_can",
+      "short_id": "PG.place.002_master_chef_can",
+      "target": "002_master_chef_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/003_cracker_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.003_cracker_box",
+      "short_id": "PG.place.003_cracker_box",
+      "target": "003_cracker_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/004_sugar_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.004_sugar_box",
+      "short_id": "PG.place.004_sugar_box",
+      "target": "004_sugar_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/005_tomato_soup_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.005_tomato_soup_can",
+      "short_id": "PG.place.005_tomato_soup_can",
+      "target": "005_tomato_soup_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/007_tuna_fish_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.007_tuna_fish_can",
+      "short_id": "PG.place.007_tuna_fish_can",
+      "target": "007_tuna_fish_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/008_pudding_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.008_pudding_box",
+      "short_id": "PG.place.008_pudding_box",
+      "target": "008_pudding_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/009_gelatin_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.009_gelatin_box",
+      "short_id": "PG.place.009_gelatin_box",
+      "target": "009_gelatin_box",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/010_potted_meat_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.010_potted_meat_can",
+      "short_id": "PG.place.010_potted_meat_can",
+      "target": "010_potted_meat_can",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/024_bowl",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.024_bowl",
+      "short_id": "PG.place.024_bowl",
+      "target": "024_bowl",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/prepare_groceries/place/all",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.prepare_groceries.place.all",
+      "short_id": "PG.place.all",
+      "target": "all",
+      "task_family": "prepare_groceries"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/close/fridge",
+      "contract_type": "close",
+      "family": "rl",
+      "id": "rl.set_table.close.fridge",
+      "short_id": "ST.close.fridge",
+      "target": "fridge",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/close/kitchen_counter",
+      "contract_type": "close",
+      "family": "rl",
+      "id": "rl.set_table.close.kitchen_counter",
+      "short_id": "ST.close.kitchen_counter",
+      "target": "kitchen_counter",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/navigate/all",
+      "contract_type": "navigate",
+      "family": "rl",
+      "id": "rl.set_table.navigate.all",
+      "short_id": "ST.navigate.all",
+      "target": "all",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/open/fridge",
+      "contract_type": "open",
+      "family": "rl",
+      "id": "rl.set_table.open.fridge",
+      "short_id": "ST.open.fridge",
+      "target": "fridge",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/open/kitchen_counter",
+      "contract_type": "open",
+      "family": "rl",
+      "id": "rl.set_table.open.kitchen_counter",
+      "short_id": "ST.open.kitchen_counter",
+      "target": "kitchen_counter",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/pick/013_apple",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.set_table.pick.013_apple",
+      "short_id": "ST.pick.013_apple",
+      "target": "013_apple",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/pick/024_bowl",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.set_table.pick.024_bowl",
+      "short_id": "ST.pick.024_bowl",
+      "target": "024_bowl",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/pick/all",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.set_table.pick.all",
+      "short_id": "ST.pick.all",
+      "target": "all",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/place/013_apple",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.set_table.place.013_apple",
+      "short_id": "ST.place.013_apple",
+      "target": "013_apple",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/place/024_bowl",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.set_table.place.024_bowl",
+      "short_id": "ST.place.024_bowl",
+      "target": "024_bowl",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/set_table/place/all",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.set_table.place.all",
+      "short_id": "ST.place.all",
+      "target": "all",
+      "task_family": "set_table"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/navigate/all",
+      "contract_type": "navigate",
+      "family": "rl",
+      "id": "rl.tidy_house.navigate.all",
+      "short_id": "TH.navigate.all",
+      "target": "all",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/002_master_chef_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.002_master_chef_can",
+      "short_id": "TH.pick.002_master_chef_can",
+      "target": "002_master_chef_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/003_cracker_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.003_cracker_box",
+      "short_id": "TH.pick.003_cracker_box",
+      "target": "003_cracker_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/004_sugar_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.004_sugar_box",
+      "short_id": "TH.pick.004_sugar_box",
+      "target": "004_sugar_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/005_tomato_soup_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.005_tomato_soup_can",
+      "short_id": "TH.pick.005_tomato_soup_can",
+      "target": "005_tomato_soup_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/007_tuna_fish_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.007_tuna_fish_can",
+      "short_id": "TH.pick.007_tuna_fish_can",
+      "target": "007_tuna_fish_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/008_pudding_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.008_pudding_box",
+      "short_id": "TH.pick.008_pudding_box",
+      "target": "008_pudding_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/009_gelatin_box",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.009_gelatin_box",
+      "short_id": "TH.pick.009_gelatin_box",
+      "target": "009_gelatin_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/010_potted_meat_can",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.010_potted_meat_can",
+      "short_id": "TH.pick.010_potted_meat_can",
+      "target": "010_potted_meat_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/024_bowl",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.024_bowl",
+      "short_id": "TH.pick.024_bowl",
+      "target": "024_bowl",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/pick/all",
+      "contract_type": "pick",
+      "family": "rl",
+      "id": "rl.tidy_house.pick.all",
+      "short_id": "TH.pick.all",
+      "target": "all",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/002_master_chef_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.002_master_chef_can",
+      "short_id": "TH.place.002_master_chef_can",
+      "target": "002_master_chef_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/003_cracker_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.003_cracker_box",
+      "short_id": "TH.place.003_cracker_box",
+      "target": "003_cracker_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/004_sugar_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.004_sugar_box",
+      "short_id": "TH.place.004_sugar_box",
+      "target": "004_sugar_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/005_tomato_soup_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.005_tomato_soup_can",
+      "short_id": "TH.place.005_tomato_soup_can",
+      "target": "005_tomato_soup_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/007_tuna_fish_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.007_tuna_fish_can",
+      "short_id": "TH.place.007_tuna_fish_can",
+      "target": "007_tuna_fish_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/008_pudding_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.008_pudding_box",
+      "short_id": "TH.place.008_pudding_box",
+      "target": "008_pudding_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/009_gelatin_box",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.009_gelatin_box",
+      "short_id": "TH.place.009_gelatin_box",
+      "target": "009_gelatin_box",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/010_potted_meat_can",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.010_potted_meat_can",
+      "short_id": "TH.place.010_potted_meat_can",
+      "target": "010_potted_meat_can",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/024_bowl",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.024_bowl",
+      "short_id": "TH.place.024_bowl",
+      "target": "024_bowl",
+      "task_family": "tidy_house"
+    },
+    {
+      "checkpoint_leaf": "rl/tidy_house/place/all",
+      "contract_type": "place",
+      "family": "rl",
+      "id": "rl.tidy_house.place.all",
+      "short_id": "TH.place.all",
+      "target": "all",
+      "task_family": "tidy_house"
+    }
+  ],
+  "schema_version": "mshab.granularity-layer3-layer4.v1",
+  "scope": "layers_3_and_4_only",
+  "semantics": {
+    "layer_4_role": "policy_storage_only",
+    "only_relation": "Policy --EXECUTES--> Contract",
+    "policy_policy_relations": "none"
+  },
+  "summary": {
+    "contracts": 5,
+    "executes_connections": 53,
+    "policies": 53,
+    "policies_by_contract": {
+      "close": 2,
+      "navigate": 3,
+      "open": 2,
+      "pick": 23,
+      "place": 23
+    }
+  }
+}

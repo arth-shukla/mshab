@@ -1,0 +1,70 @@
+schema_version: mshab.set-table-graph-experiment.v1
+name: set_table_graph_constrained_planning_and_execution
+task_family: set_table
+split: val
+plan_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+canonical_instruction_id: I01
+seed: 0
+
+# Every instruction states the benchmark order explicitly:
+# bowl retrieve -> bowl deliver -> drawer restore ->
+# apple retrieve -> apple deliver -> fridge restore.
+instructions:
+  - id: I01
+    text: >-
+      First retrieve the bowl from the kitchen-counter drawer, place it on the
+      dining table, and close the drawer. Then retrieve the apple from the
+      fridge, place it on the dining table, and close the fridge.
+  - id: I02
+    text: >-
+      Set the table in this order: take the bowl out of the kitchen-counter
+      drawer, put the bowl on the dining table, and shut the drawer; afterward,
+      take the apple out of the fridge, put the apple on the dining table, and
+      shut the fridge.
+  - id: I03
+    text: >-
+      Complete the bowl stage before the apple stage. For the bowl, retrieve it
+      from the kitchen-counter drawer, deliver it to the dining table, and
+      restore the drawer to closed. Next, retrieve the apple from the fridge,
+      deliver it to the dining table, and restore the fridge to closed.
+  - id: I04
+    text: >-
+      Move the bowl from the kitchen-counter drawer to the dining table and
+      close that drawer before doing anything with the apple. Then move the
+      apple from the fridge to the dining table and close the fridge.
+  - id: I05
+    text: >-
+      Prepare the dining table sequentially: retrieve and place the bowl from
+      the kitchen-counter drawer, then close the drawer; only after that,
+      retrieve and place the apple from the fridge, then close the fridge.
+  - id: I06
+    text: >-
+      Execute two ordered phases. Phase one is bowl: open the kitchen-counter
+      drawer as needed, retrieve the bowl, place it on the dining table, and
+      close the drawer. Phase two is apple: open the fridge as needed, retrieve
+      the apple, place it on the dining table, and close the fridge.
+  - id: I07
+    text: >-
+      The drawer must already be closed when the apple stage begins. Retrieve
+      the bowl from that kitchen-counter drawer, place the bowl on the dining
+      table, and close the drawer. Afterward retrieve the apple from the fridge,
+      place it on the dining table, and close the fridge.
+  - id: I08
+    text: >-
+      Fetch the bowl from the kitchen-counter drawer and deliver it to the
+      dining table, restoring the drawer to its closed state immediately after
+      placement. Then fetch the apple from the fridge and deliver it to the
+      dining table, restoring the fridge to its closed state after placement.
+  - id: I09
+    text: >-
+      Put the bowl and apple on the dining table one at a time. Finish the bowl
+      first by taking it from the kitchen-counter drawer, placing it on the
+      table, and closing the drawer. Finish the apple second by taking it from
+      the fridge, placing it on the table, and closing the fridge.
+  - id: I10
+    text: >-
+      Use this exact task order: bowl from kitchen-counter drawer to dining
+      table; close kitchen-counter drawer; apple from fridge to dining table;
+      close fridge. Include every navigation, opening, picking, placing, and
+      closing skill required by the graph.
+

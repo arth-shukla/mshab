@@ -1,0 +1,56 @@
+# Convenience wrapper around the root Dockerfile.
+#
+#   docker compose build
+#   docker compose run --rm mshab                           # interactive shell
+#   docker compose run --rm mshab mshab-download-assets     # ycb / ReplicaCAD / ReplicaCADRearrange
+#   docker compose run --rm mshab ./scripts/evaluate_set_table_graph_plan.sh nominal
+#
+# Requires the NVIDIA Container Toolkit on the host.
+#
+# Policy checkpoints are NOT in the image and NOT in the assets volume -- they
+# are ~17GB and live on the host. Point MSHAB_CKPT_DIR at wherever they were
+# downloaded (see README "Download checkpoints"); the default below matches the
+# path used on this machine.
+
+services:
+  mshab:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mshab:latest
+    stdin_open: true
+    tty: true
+    # SAPIEN's GPU sim needs a large shared-memory segment.
+    shm_size: "16gb"
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    environment:
+      MS_ASSET_DIR: /root/.maniskill
+      SAPIEN_NO_DISPLAY: "1"
+      # Evaluation outputs. This lives inside the bind-mounted repo, so videos
+      # and tensorboard logs appear on the host under ./mshab_exps (gitignored)
+      # instead of being lost with the container.
+      MSHAB_EXPS_DIR: /work/mshab/mshab_exps
+    volumes:
+      # ycb / ReplicaCAD / ReplicaCADRearrange + generated datasets
+      - mshab-assets:/root/.maniskill
+      # RL / BC / DP policy checkpoints from arth-shukla/mshab_checkpoints.
+      # Mounted *inside* the assets volume, where mshab.evaluate looks for them
+      # ($MS_ASSET_DIR/data/mshab_checkpoints). Read-only: nothing writes here.
+      - ${MSHAB_CKPT_DIR:-/data/mshab/mshab_checkpoints}:/root/.maniskill/data/mshab_checkpoints:ro
+      # live-mount the repo so code edits on the host take effect immediately
+      - .:/work/mshab
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  mshab-assets:
+    # Pin the real volume name. Without this, compose would prefix it with
+    # the project directory name and silently create a second, empty volume.
+    name: mshab-assets

@@ -172,7 +172,15 @@ bench_results/
 nohup*
 test*
 
+# Keep the historical broad test* rule outside the repository test suite.
+!tests/
+!tests/test_*.py
+
 ManiSkill/
 nautilus/
 
 .DS_Store
+
+# Local VLM credentials and generated experiment runs.
+mshab/experiments/granularity/vlm/config.yaml
+mshab/experiments/granularity/vlm/outputs/

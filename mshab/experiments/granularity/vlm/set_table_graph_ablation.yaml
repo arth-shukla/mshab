@@ -1,0 +1,103 @@
+schema_version: mshab.set-table-graph-ablation.v1
+name: set_table_flat_library_vs_full_graph
+task_family: set_table
+split: val
+seed: 0
+
+# One paired scene per query. Both VLM conditions receive the same query,
+# SkillNodes, Contracts, model configuration, and output schema. Only Layer-2
+# edges differ.
+cases:
+  - id: N01
+    case_type: nominal
+    plan_index: 0
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    instruction: >-
+      Set the table with the bowl stored in the kitchen-counter drawer and the
+      apple stored in the fridge. Put the bowl on the dining table and close
+      its drawer before starting the apple; then put the apple on the dining
+      table and close the fridge.
+  - id: N02
+    case_type: nominal
+    plan_index: 1
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    instruction: >-
+      Prepare the dining table. First finish the bowl from the closed
+      kitchen-counter drawer, including restoring that drawer to closed. Then
+      finish the apple from the closed fridge and restore the fridge to closed.
+  - id: N03
+    case_type: nominal
+    plan_index: 2
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    instruction: >-
+      The bowl begins inside the kitchen-counter drawer and the apple begins
+      inside the fridge. Move both to the dining table one at a time, bowl
+      first, leaving each source closed after its object has been delivered.
+  - id: N04
+    case_type: nominal
+    plan_index: 3
+    failed_skill_node_id: null
+    oracle_route_id: nominal
+    instruction: >-
+      Achieve at(024_bowl,dining_table), closed(kitchen_counter),
+      at(013_apple,dining_table), and closed(fridge), in that order. Initially
+      the bowl is in the kitchen-counter drawer and the apple is in the fridge.
+
+  - id: F01
+    case_type: fallback
+    plan_index: 4
+    failed_skill_node_id: pick_drawer_object
+    oracle_route_id: fallback.retrieve_bowl
+    instruction: >-
+      Complete the same ordered SetTable task, but the primary drawer-bowl Pick
+      SkillNode pick_drawer_object has failed. Use its graph-defined recovery
+      route, then deliver the bowl, close the drawer, and complete the apple
+      stage before closing the fridge.
+  - id: F02
+    case_type: fallback
+    plan_index: 5
+    failed_skill_node_id: place_on_table
+    oracle_route_id: fallback.deliver_bowl
+    instruction: >-
+      Complete the ordered SetTable task. The first place_on_table attempt,
+      while delivering the bowl, has failed. Use the corresponding recovery
+      path, close the drawer, and then complete the apple and fridge stage.
+  - id: F03
+    case_type: fallback
+    plan_index: 6
+    failed_skill_node_id: close_drawer
+    oracle_route_id: fallback.restore_drawer
+    instruction: >-
+      Complete the ordered SetTable task. After delivering the bowl, the
+      primary close_drawer SkillNode has failed. Recover using the Skill Graph,
+      then complete the apple stage and leave the fridge closed.
+  - id: F04
+    case_type: fallback
+    plan_index: 7
+    failed_skill_node_id: pick_fridge_object
+    oracle_route_id: fallback.retrieve_apple
+    instruction: >-
+      Complete the ordered SetTable task. The bowl stage is nominal, but the
+      primary fridge-apple Pick SkillNode pick_fridge_object has failed. Use
+      its recovery route, deliver the apple, and leave the fridge closed.
+  - id: F05
+    case_type: fallback
+    plan_index: 8
+    failed_skill_node_id: place_on_table
+    oracle_route_id: fallback.deliver_apple
+    instruction: >-
+      Complete the ordered SetTable task. The bowl stage is nominal. The
+      place_on_table attempt for the apple has failed, so use the graph-defined
+      apple placement recovery route before closing the fridge.
+  - id: F06
+    case_type: fallback
+    plan_index: 9
+    failed_skill_node_id: close_fridge
+    oracle_route_id: fallback.restore_fridge
+    instruction: >-
+      Complete the ordered SetTable task. All earlier stages are nominal, but
+      the primary close_fridge SkillNode has failed. Finish with the
+      graph-defined fridge-closing recovery route.

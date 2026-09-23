@@ -1,0 +1,19 @@
+# Copy this file to config.yaml. config.yaml is ignored by Git.
+deepseek:
+  base_url: https://api.deepseek.com
+  model: deepseek-flash
+
+  # Recommended: leave api_key empty and export DEEPSEEK_API_KEY.
+  api_key_env: DEEPSEEK_API_KEY
+  api_key: ""
+
+  # Explicit graph reasoning. Allowed efforts: low, high, max.
+  thinking: enabled
+  reasoning_effort: high
+
+  # Used only when thinking is disabled.
+  temperature: 0.0
+  max_tokens: 16384
+  timeout_seconds: 120
+  # Use zero for controlled experiments: one case must equal one model sample.
+  retries: 0

@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1510" viewBox="0 0 1900 1510" role="img">
+<title>Complete MS-HAB SetTable four-layer skill graph</title>
+<desc>Bowl and apple SetTable skill composition with contracts and the downloaded policies that execute them.</desc>
+<defs>
+          <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                  orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+          </marker>
+          <style>
+            .layer { stroke-width: 2; rx: 16; }
+            .title { font: 700 27px Arial, sans-serif; fill: #0f172a; }
+            .subtitle { font: 700 17px Arial, sans-serif; fill: #475569; }
+            .text { font: 15px Arial, sans-serif; fill: #1e293b; }
+            .small { font: 13px Arial, sans-serif; fill: #475569; }
+            .tiny { font: 12px Arial, sans-serif; fill: #475569; }
+            .node { stroke: #64748b; stroke-width: 1.5; rx: 10; }
+            .subgraph { stroke: #16a34a; stroke-width: 2; rx: 12; }
+            .node-title { font: 700 15px Arial, sans-serif; fill: #0f172a; }
+            .edge { fill: none; stroke: #334155; stroke-width: 2; }
+            .subgoal-edge { fill: none; stroke: #2563eb; stroke-width: 2; }
+            .relation { fill: none; stroke: #7c3aed; stroke-width: 2;
+                        stroke-dasharray: 6 4; }
+          </style>
+        </defs>
+<rect width="1900" height="1510" fill="#f8fafc"/>
+<rect class="layer" x="24" y="20" width="1852" height="240" fill="#eaf4ff" stroke="#3b82f6"/>
+<text class="title" x="950" y="58" text-anchor="middle">1. Sub-goal Graph</text>
+<text class="subtitle" x="1815" y="56" text-anchor="end">SCENE-INDEPENDENT</text>
+<rect class="node" x="55" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="153" y="134" text-anchor="middle">Open counter</text>
+<text class="small" x="153" y="158" text-anchor="middle">open(kitchen_counter)</text>
+<rect class="node" x="283" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="381" y="134" text-anchor="middle">Retrieve bowl</text>
+<text class="small" x="381" y="158" text-anchor="middle">holding(024_bowl)</text>
+<path class="subgoal-edge" d="M 251 144 L 277 144" marker-end="url(#arrow)"/>
+<rect class="node" x="511" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="609" y="134" text-anchor="middle">Place bowl</text>
+<text class="small" x="609" y="158" text-anchor="middle">at(024_bowl,dining_table)</text>
+<path class="subgoal-edge" d="M 479 144 L 505 144" marker-end="url(#arrow)"/>
+<rect class="node" x="739" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="837" y="134" text-anchor="middle">Close counter</text>
+<text class="small" x="837" y="158" text-anchor="middle">closed(kitchen_counter)</text>
+<path class="subgoal-edge" d="M 707 144 L 733 144" marker-end="url(#arrow)"/>
+<rect class="node" x="967" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="1065" y="134" text-anchor="middle">Open fridge</text>
+<text class="small" x="1065" y="158" text-anchor="middle">open(fridge)</text>
+<path class="subgoal-edge" d="M 935 144 L 961 144" marker-end="url(#arrow)"/>
+<rect class="node" x="1195" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="1293" y="134" text-anchor="middle">Retrieve apple</text>
+<text class="small" x="1293" y="158" text-anchor="middle">holding(013_apple)</text>
+<path class="subgoal-edge" d="M 1163 144 L 1189 144" marker-end="url(#arrow)"/>
+<rect class="node" x="1423" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="1521" y="134" text-anchor="middle">Place apple</text>
+<text class="small" x="1521" y="158" text-anchor="middle">at(013_apple,dining_table)</text>
+<path class="subgoal-edge" d="M 1391 144 L 1417 144" marker-end="url(#arrow)"/>
+<rect class="node" x="1651" y="105" width="196" height="78" fill="#ffffff"/>
+<text class="node-title" x="1749" y="134" text-anchor="middle">Close fridge</text>
+<text class="small" x="1749" y="158" text-anchor="middle">closed(fridge)</text>
+<path class="subgoal-edge" d="M 1619 144 L 1645 144" marker-end="url(#arrow)"/>
+<rect class="layer" x="24" y="285" width="1852" height="670" fill="#ecfdf3" stroke="#22c55e"/>
+<text class="title" x="950" y="325" text-anchor="middle">2. Sub-goal-owned Candidate Skill Subgraphs</text>
+<text class="subtitle" x="1815" y="323" text-anchor="end">SCENE-INDEPENDENT · MANUAL V1</text>
+<text class="subtitle" x="55" y="353" text-anchor="start">BOWL subgraphs</text>
+<rect class="subgraph" x="55" y="365" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="265" y="392" text-anchor="middle">Sub-goal: bowl_source_open</text>
+<rect class="node" x="73" y="417" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="160" y="446" text-anchor="middle">1 Navigate</text>
+<text class="small" x="160" y="470" text-anchor="middle">kitchen_counter</text>
+<rect class="node" x="282" y="417" width="175" height="68" fill="#fef3c7"/>
+<text class="node-title" x="369" y="446" text-anchor="middle">2 Open</text>
+<text class="small" x="369" y="470" text-anchor="middle">kitchen_counter</text>
+<path class="edge" d="M 248 451 L 276 451" marker-end="url(#arrow)"/>
+<text class="tiny" x="262" y="443" text-anchor="middle">ENABLES</text>
+<rect class="subgraph" x="505" y="365" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="715" y="392" text-anchor="middle">Sub-goal: bowl_retrieved</text>
+<rect class="node" x="523" y="417" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="610" y="446" text-anchor="middle">3 Navigate</text>
+<text class="small" x="610" y="470" text-anchor="middle">024_bowl</text>
+<rect class="node" x="732" y="417" width="175" height="68" fill="#dcfce7"/>
+<text class="node-title" x="819" y="446" text-anchor="middle">4 Pick</text>
+<text class="small" x="819" y="470" text-anchor="middle">024_bowl</text>
+<path class="edge" d="M 698 451 L 726 451" marker-end="url(#arrow)"/>
+<text class="tiny" x="712" y="443" text-anchor="middle">ENABLES</text>
+<rect class="node" x="732" y="515" width="175" height="62" fill="#ede9fe"/>
+<text class="node-title" x="819" y="544" text-anchor="middle">Pick all</text>
+<text class="small" x="819" y="568" text-anchor="middle">alternative / fallback</text>
+<path class="relation" d="M 819 485 L 819 510" marker-end="url(#arrow)"/>
+<text class="tiny" x="720" y="506" text-anchor="end">IS_A / ALT / FALLBACK</text>
+<path class="edge" d="M 475 483 L 499 483" marker-end="url(#arrow)"/>
+<rect class="subgraph" x="955" y="365" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="1165" y="392" text-anchor="middle">Sub-goal: bowl_placed</text>
+<rect class="node" x="973" y="417" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="1060" y="446" text-anchor="middle">5 Navigate</text>
+<text class="small" x="1060" y="470" text-anchor="middle">dining_table</text>
+<rect class="node" x="1182" y="417" width="175" height="68" fill="#fce7f3"/>
+<text class="node-title" x="1269" y="446" text-anchor="middle">6 Place</text>
+<text class="small" x="1269" y="470" text-anchor="middle">024_bowl</text>
+<path class="edge" d="M 1148 451 L 1176 451" marker-end="url(#arrow)"/>
+<text class="tiny" x="1162" y="443" text-anchor="middle">ENABLES</text>
+<rect class="node" x="1182" y="515" width="175" height="62" fill="#ede9fe"/>
+<text class="node-title" x="1269" y="544" text-anchor="middle">Place all</text>
+<text class="small" x="1269" y="568" text-anchor="middle">alternative / fallback</text>
+<path class="relation" d="M 1269 485 L 1269 510" marker-end="url(#arrow)"/>
+<text class="tiny" x="1170" y="506" text-anchor="end">IS_A / ALT / FALLBACK</text>
+<path class="edge" d="M 925 483 L 949 483" marker-end="url(#arrow)"/>
+<rect class="subgraph" x="1405" y="365" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="1615" y="392" text-anchor="middle">Sub-goal: bowl_source_closed</text>
+<rect class="node" x="1423" y="417" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="1510" y="446" text-anchor="middle">7 Navigate</text>
+<text class="small" x="1510" y="470" text-anchor="middle">kitchen_counter</text>
+<rect class="node" x="1632" y="417" width="175" height="68" fill="#ffedd5"/>
+<text class="node-title" x="1719" y="446" text-anchor="middle">8 Close</text>
+<text class="small" x="1719" y="470" text-anchor="middle">kitchen_counter</text>
+<path class="edge" d="M 1598 451 L 1626 451" marker-end="url(#arrow)"/>
+<text class="tiny" x="1612" y="443" text-anchor="middle">ENABLES</text>
+<path class="edge" d="M 1375 483 L 1399 483" marker-end="url(#arrow)"/>
+<path class="edge" d="M 1825 483 L 1850 483 L 1850 645 L 35 645 L 35 788 L 49 788" marker-end="url(#arrow)"/>
+<text class="small" x="950" y="640" text-anchor="middle">cross-subgraph ENABLES: bowl complete → apple starts</text>
+<text class="subtitle" x="55" y="658" text-anchor="start">APPLE subgraphs</text>
+<rect class="subgraph" x="55" y="670" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="265" y="697" text-anchor="middle">Sub-goal: apple_source_open</text>
+<rect class="node" x="73" y="722" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="160" y="751" text-anchor="middle">9 Navigate</text>
+<text class="small" x="160" y="775" text-anchor="middle">fridge</text>
+<rect class="node" x="282" y="722" width="175" height="68" fill="#fef3c7"/>
+<text class="node-title" x="369" y="751" text-anchor="middle">10 Open</text>
+<text class="small" x="369" y="775" text-anchor="middle">fridge</text>
+<path class="edge" d="M 248 756 L 276 756" marker-end="url(#arrow)"/>
+<text class="tiny" x="262" y="748" text-anchor="middle">ENABLES</text>
+<rect class="subgraph" x="505" y="670" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="715" y="697" text-anchor="middle">Sub-goal: apple_retrieved</text>
+<rect class="node" x="523" y="722" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="610" y="751" text-anchor="middle">11 Navigate</text>
+<text class="small" x="610" y="775" text-anchor="middle">013_apple</text>
+<rect class="node" x="732" y="722" width="175" height="68" fill="#dcfce7"/>
+<text class="node-title" x="819" y="751" text-anchor="middle">12 Pick</text>
+<text class="small" x="819" y="775" text-anchor="middle">013_apple</text>
+<path class="edge" d="M 698 756 L 726 756" marker-end="url(#arrow)"/>
+<text class="tiny" x="712" y="748" text-anchor="middle">ENABLES</text>
+<rect class="node" x="732" y="820" width="175" height="62" fill="#ede9fe"/>
+<text class="node-title" x="819" y="849" text-anchor="middle">Pick all</text>
+<text class="small" x="819" y="873" text-anchor="middle">alternative / fallback</text>
+<path class="relation" d="M 819 790 L 819 815" marker-end="url(#arrow)"/>
+<text class="tiny" x="720" y="811" text-anchor="end">IS_A / ALT / FALLBACK</text>
+<path class="edge" d="M 475 788 L 499 788" marker-end="url(#arrow)"/>
+<rect class="subgraph" x="955" y="670" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="1165" y="697" text-anchor="middle">Sub-goal: apple_placed</text>
+<rect class="node" x="973" y="722" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="1060" y="751" text-anchor="middle">13 Navigate</text>
+<text class="small" x="1060" y="775" text-anchor="middle">dining_table</text>
+<rect class="node" x="1182" y="722" width="175" height="68" fill="#fce7f3"/>
+<text class="node-title" x="1269" y="751" text-anchor="middle">14 Place</text>
+<text class="small" x="1269" y="775" text-anchor="middle">013_apple</text>
+<path class="edge" d="M 1148 756 L 1176 756" marker-end="url(#arrow)"/>
+<text class="tiny" x="1162" y="748" text-anchor="middle">ENABLES</text>
+<rect class="node" x="1182" y="820" width="175" height="62" fill="#ede9fe"/>
+<text class="node-title" x="1269" y="849" text-anchor="middle">Place all</text>
+<text class="small" x="1269" y="873" text-anchor="middle">alternative / fallback</text>
+<path class="relation" d="M 1269 790 L 1269 815" marker-end="url(#arrow)"/>
+<text class="tiny" x="1170" y="811" text-anchor="end">IS_A / ALT / FALLBACK</text>
+<path class="edge" d="M 925 788 L 949 788" marker-end="url(#arrow)"/>
+<rect class="subgraph" x="1405" y="670" width="420" height="235" fill="#f7fff9"/>
+<text class="subtitle" x="1615" y="697" text-anchor="middle">Sub-goal: apple_source_closed</text>
+<rect class="node" x="1423" y="722" width="175" height="68" fill="#dbeafe"/>
+<text class="node-title" x="1510" y="751" text-anchor="middle">15 Navigate</text>
+<text class="small" x="1510" y="775" text-anchor="middle">fridge</text>
+<rect class="node" x="1632" y="722" width="175" height="68" fill="#ffedd5"/>
+<text class="node-title" x="1719" y="751" text-anchor="middle">16 Close</text>
+<text class="small" x="1719" y="775" text-anchor="middle">fridge</text>
+<path class="edge" d="M 1598 756 L 1626 756" marker-end="url(#arrow)"/>
+<text class="tiny" x="1612" y="748" text-anchor="middle">ENABLES</text>
+<path class="edge" d="M 1375 788 L 1399 788" marker-end="url(#arrow)"/>
+<text class="small" x="950" y="930" text-anchor="middle">Green boxes: one SkillSubgraph per sub-goal    Solid: ENABLES (including cross-subgraph)    Dashed: alternative skill nodes</text>
+<path class="edge" d="M 950 955 L 950 978" marker-end="url(#arrow)"/>
+<text class="tiny" x="970" y="972" text-anchor="start">future decision VLM: graph + state → one next skill</text>
+<rect class="layer" x="24" y="980" width="1852" height="255" fill="#fffbeb" stroke="#eab308"/>
+<text class="title" x="950" y="1020" text-anchor="middle">3. Grounded Skills</text>
+<text class="subtitle" x="1815" y="1018" text-anchor="end">ENVIRONMENT-SPECIFIC</text>
+<rect class="node" x="55" y="1060" width="325" height="120" fill="#ffffff"/>
+<text class="node-title" x="217" y="1089" text-anchor="middle">Navigate</text>
+<text class="small" x="217" y="1113" text-anchor="middle">pre: present(goal)</text>
+<text class="small" x="217" y="1144" text-anchor="middle">effect: reachable(goal)</text>
+<text class="tiny" x="217" y="1165" text-anchor="middle">physical feasibility only: verify effect + collision invariant</text>
+<rect class="node" x="420" y="1060" width="325" height="120" fill="#ffffff"/>
+<text class="node-title" x="582" y="1089" text-anchor="middle">Open</text>
+<text class="small" x="582" y="1113" text-anchor="middle">pre: reachable + closed</text>
+<text class="small" x="582" y="1144" text-anchor="middle">effect: open(articulation)</text>
+<text class="tiny" x="582" y="1165" text-anchor="middle">physical feasibility only: verify effect + collision invariant</text>
+<rect class="node" x="785" y="1060" width="325" height="120" fill="#ffffff"/>
+<text class="node-title" x="947" y="1089" text-anchor="middle">Pick</text>
+<text class="small" x="947" y="1113" text-anchor="middle">pre: reachable + empty</text>
+<text class="small" x="947" y="1144" text-anchor="middle">effect: holding(object)</text>
+<text class="tiny" x="947" y="1165" text-anchor="middle">physical feasibility only: verify effect + collision invariant</text>
+<rect class="node" x="1150" y="1060" width="325" height="120" fill="#ffffff"/>
+<text class="node-title" x="1312" y="1089" text-anchor="middle">Place</text>
+<text class="small" x="1312" y="1113" text-anchor="middle">pre: holding + reachable</text>
+<text class="small" x="1312" y="1144" text-anchor="middle">effect: at(object,destination)</text>
+<text class="tiny" x="1312" y="1165" text-anchor="middle">physical feasibility only: verify effect + collision invariant</text>
+<rect class="node" x="1515" y="1060" width="325" height="120" fill="#ffffff"/>
+<text class="node-title" x="1677" y="1089" text-anchor="middle">Close</text>
+<text class="small" x="1677" y="1113" text-anchor="middle">pre: reachable + open</text>
+<text class="small" x="1677" y="1144" text-anchor="middle">effect: closed(articulation)</text>
+<text class="tiny" x="1677" y="1165" text-anchor="middle">physical feasibility only: verify effect + collision invariant</text>
+<rect class="layer" x="24" y="1260" width="1852" height="225" fill="#f5f3ff" stroke="#8b5cf6"/>
+<text class="title" x="950" y="1300" text-anchor="middle">4. Contracts and the Policies Bound to Them</text>
+<text class="subtitle" x="1815" y="1298" text-anchor="end">ENVIRONMENT-SPECIFIC</text>
+<rect class="node" x="55" y="1330" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="187" y="1359" text-anchor="middle">close.fridge</text>
+<text class="small" x="187" y="1383" text-anchor="middle">rl.close.fridge</text>
+<rect class="node" x="355" y="1330" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="487" y="1359" text-anchor="middle">close.kitchen_counter</text>
+<text class="small" x="487" y="1383" text-anchor="middle">rl.close.kitchen_counter</text>
+<rect class="node" x="655" y="1330" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="787" y="1359" text-anchor="middle">navigate.all</text>
+<text class="small" x="787" y="1383" text-anchor="middle">rl.navigate.all</text>
+<rect class="node" x="955" y="1330" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="1087" y="1359" text-anchor="middle">open.fridge</text>
+<text class="small" x="1087" y="1383" text-anchor="middle">rl.open.fridge</text>
+<rect class="node" x="1255" y="1330" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="1387" y="1359" text-anchor="middle">open.kitchen_counter</text>
+<text class="small" x="1387" y="1383" text-anchor="middle">rl.open.kitchen_counter</text>
+<rect class="node" x="1555" y="1330" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="1687" y="1359" text-anchor="middle">pick.013_apple</text>
+<text class="small" x="1687" y="1383" text-anchor="middle">rl.pick.013_apple + rl.pick.all</text>
+<rect class="node" x="55" y="1400" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="187" y="1429" text-anchor="middle">pick.024_bowl</text>
+<text class="small" x="187" y="1453" text-anchor="middle">rl.pick.024_bowl + rl.pick.all</text>
+<rect class="node" x="355" y="1400" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="487" y="1429" text-anchor="middle">pick.all</text>
+<text class="small" x="487" y="1453" text-anchor="middle">rl.pick.all</text>
+<rect class="node" x="655" y="1400" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="787" y="1429" text-anchor="middle">place.013_apple</text>
+<text class="small" x="787" y="1453" text-anchor="middle">rl.place.013_apple + rl.place.all</text>
+<rect class="node" x="955" y="1400" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="1087" y="1429" text-anchor="middle">place.024_bowl</text>
+<text class="small" x="1087" y="1453" text-anchor="middle">rl.place.024_bowl + rl.place.all</text>
+<rect class="node" x="1255" y="1400" width="265" height="56" fill="#ffffff"/>
+<text class="node-title" x="1387" y="1429" text-anchor="middle">place.all</text>
+<text class="small" x="1387" y="1453" text-anchor="middle">rl.place.all</text>
+<text class="small" x="950" y="1476" text-anchor="middle">11 contracts · 11 policies · 15 bindings (many-to-many): an all-object checkpoint is also bound to every specialized contract of its type</text>
+</svg>

@@ -1,0 +1,157 @@
+{
+  "schema_version": "mshab.controller-calibration.v1",
+  "note": "GT-oracle rollouts on the 16-step SetTable sequence. Preserved summary of a deleted VLM experiment run; raw rollouts were not retained.",
+  "preserved_on": "2026-09-19",
+  "task": "set_table",
+  "plan_source": "graph_oracle",
+  "policy_type": "rl_per_obj",
+  "rollouts": 46,
+  "successes": 4,
+  "success_rate": 0.087,
+  "per_step": [
+    {
+      "index": 0,
+      "subtask": "navigate_counter",
+      "skill": "navigate",
+      "reached": 46,
+      "died": 1,
+      "step_success_rate": 0.9783,
+      "cumulative_survival": 0.9783
+    },
+    {
+      "index": 1,
+      "subtask": "open_drawer",
+      "skill": "open",
+      "reached": 45,
+      "died": 17,
+      "step_success_rate": 0.6222,
+      "cumulative_survival": 0.6087
+    },
+    {
+      "index": 2,
+      "subtask": "navigate_bowl",
+      "skill": "navigate",
+      "reached": 28,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.6087
+    },
+    {
+      "index": 3,
+      "subtask": "pick_bowl",
+      "skill": "pick",
+      "reached": 28,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.6087
+    },
+    {
+      "index": 4,
+      "subtask": "navigate_table",
+      "skill": "navigate",
+      "reached": 28,
+      "died": 6,
+      "step_success_rate": 0.7857,
+      "cumulative_survival": 0.4783
+    },
+    {
+      "index": 5,
+      "subtask": "place_bowl",
+      "skill": "place",
+      "reached": 22,
+      "died": 10,
+      "step_success_rate": 0.5455,
+      "cumulative_survival": 0.2609
+    },
+    {
+      "index": 6,
+      "subtask": "navigate_counter2",
+      "skill": "navigate",
+      "reached": 12,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.2609
+    },
+    {
+      "index": 7,
+      "subtask": "close_drawer",
+      "skill": "close",
+      "reached": 12,
+      "died": 7,
+      "step_success_rate": 0.4167,
+      "cumulative_survival": 0.1087
+    },
+    {
+      "index": 8,
+      "subtask": "navigate_fridge",
+      "skill": "navigate",
+      "reached": 5,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.1087
+    },
+    {
+      "index": 9,
+      "subtask": "open_fridge",
+      "skill": "open",
+      "reached": 5,
+      "died": 1,
+      "step_success_rate": 0.8,
+      "cumulative_survival": 0.087
+    },
+    {
+      "index": 10,
+      "subtask": "navigate_apple",
+      "skill": "navigate",
+      "reached": 4,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.087
+    },
+    {
+      "index": 11,
+      "subtask": "pick_apple",
+      "skill": "pick",
+      "reached": 4,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.087
+    },
+    {
+      "index": 12,
+      "subtask": "navigate_table2",
+      "skill": "navigate",
+      "reached": 4,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.087
+    },
+    {
+      "index": 13,
+      "subtask": "place_apple",
+      "skill": "place",
+      "reached": 4,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.087
+    },
+    {
+      "index": 14,
+      "subtask": "navigate_fridge2",
+      "skill": "navigate",
+      "reached": 4,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.087
+    },
+    {
+      "index": 15,
+      "subtask": "close_fridge",
+      "skill": "close",
+      "reached": 4,
+      "died": 0,
+      "step_success_rate": 1.0,
+      "cumulative_survival": 0.087
+    }
+  ]
+}

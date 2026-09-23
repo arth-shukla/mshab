@@ -1,0 +1,1771 @@
+{
+  "schema_version": "mshab.library-catalog.v1",
+  "task": "set_table",
+  "construction": {
+    "method": "manual",
+    "builder": "SetTableGraphBuilder",
+    "scene_independent_layers": [
+      1,
+      2
+    ],
+    "environment_specific_layers": [
+      3,
+      4
+    ],
+    "official_primary_sequence_per_object": [
+      "navigate",
+      "open",
+      "navigate",
+      "pick",
+      "navigate",
+      "place",
+      "navigate",
+      "close"
+    ],
+    "object_order": [
+      "024_bowl",
+      "013_apple"
+    ]
+  },
+  "execution_plans": {
+    "note": "One achiever per sub-goal, chosen from the candidate graph. The recovery plan is the same graph re-decided after every primary achiever is reported failed.",
+    "nominal": {
+      "selections": {
+        "apple_placed": "place_apple_specialized",
+        "apple_retrieved": "pick_apple_specialized",
+        "apple_source_closed": "close_apple_source",
+        "apple_source_open": "open_apple_source",
+        "bowl_placed": "place_bowl_specialized",
+        "bowl_retrieved": "pick_bowl_specialized",
+        "bowl_source_closed": "close_bowl_source",
+        "bowl_source_open": "open_bowl_source"
+      },
+      "order": [
+        "navigate_to_bowl_source",
+        "open_bowl_source",
+        "navigate_to_bowl",
+        "pick_bowl_specialized",
+        "navigate_bowl_to_destination",
+        "place_bowl_specialized",
+        "navigate_back_to_bowl_source",
+        "close_bowl_source",
+        "navigate_to_apple_source",
+        "open_apple_source",
+        "navigate_to_apple",
+        "pick_apple_specialized",
+        "navigate_apple_to_destination",
+        "place_apple_specialized",
+        "navigate_back_to_apple_source",
+        "close_apple_source"
+      ]
+    },
+    "recovery_all_primaries_failed": {
+      "selections": {
+        "apple_placed": "place_apple_generic",
+        "apple_retrieved": "pick_apple_generic",
+        "apple_source_closed": "close_apple_source",
+        "apple_source_open": "open_apple_source",
+        "bowl_placed": "place_bowl_generic",
+        "bowl_retrieved": "pick_bowl_generic",
+        "bowl_source_closed": "close_bowl_source",
+        "bowl_source_open": "open_bowl_source"
+      },
+      "order": [
+        "navigate_to_bowl_source",
+        "open_bowl_source",
+        "navigate_to_bowl",
+        "pick_bowl_generic",
+        "navigate_bowl_to_destination",
+        "place_bowl_generic",
+        "navigate_back_to_bowl_source",
+        "close_bowl_source",
+        "navigate_to_apple_source",
+        "open_apple_source",
+        "navigate_to_apple",
+        "pick_apple_generic",
+        "navigate_apple_to_destination",
+        "place_apple_generic",
+        "navigate_back_to_apple_source",
+        "close_apple_source"
+      ]
+    }
+  },
+  "summary": {
+    "subgoals": 8,
+    "skill_subgraphs": 8,
+    "cross_edges": 7,
+    "skill_nodes": 20,
+    "skill_edges": 35,
+    "planned_steps": 16,
+    "grounded_skills": 20,
+    "registered_contracts": 11,
+    "registered_policies": 11,
+    "policy_bindings": 15
+  },
+  "layers": {
+    "1_subgoal_graph": {
+      "goal": "Set the table with the bowl and apple, then close their storage.",
+      "subgoals": [
+        {
+          "id": "apple_placed",
+          "predicate": "at(013_apple,dining_table)",
+          "description": ""
+        },
+        {
+          "id": "apple_retrieved",
+          "predicate": "holding(013_apple)",
+          "description": ""
+        },
+        {
+          "id": "apple_source_closed",
+          "predicate": "closed(fridge)",
+          "description": ""
+        },
+        {
+          "id": "apple_source_open",
+          "predicate": "open(fridge)",
+          "description": ""
+        },
+        {
+          "id": "bowl_placed",
+          "predicate": "at(024_bowl,dining_table)",
+          "description": ""
+        },
+        {
+          "id": "bowl_retrieved",
+          "predicate": "holding(024_bowl)",
+          "description": ""
+        },
+        {
+          "id": "bowl_source_closed",
+          "predicate": "closed(kitchen_counter)",
+          "description": ""
+        },
+        {
+          "id": "bowl_source_open",
+          "predicate": "open(kitchen_counter)",
+          "description": ""
+        }
+      ],
+      "dependencies": [
+        {
+          "source": "bowl_source_open",
+          "target": "bowl_retrieved"
+        },
+        {
+          "source": "bowl_retrieved",
+          "target": "bowl_placed"
+        },
+        {
+          "source": "bowl_placed",
+          "target": "bowl_source_closed"
+        },
+        {
+          "source": "apple_source_open",
+          "target": "apple_retrieved"
+        },
+        {
+          "source": "apple_retrieved",
+          "target": "apple_placed"
+        },
+        {
+          "source": "apple_placed",
+          "target": "apple_source_closed"
+        },
+        {
+          "source": "bowl_source_closed",
+          "target": "apple_source_open"
+        }
+      ],
+      "execution_order": [
+        "bowl_source_open",
+        "bowl_retrieved",
+        "bowl_placed",
+        "bowl_source_closed",
+        "apple_source_open",
+        "apple_retrieved",
+        "apple_placed",
+        "apple_source_closed"
+      ]
+    },
+    "2_skill_graph": {
+      "task": "set_table",
+      "subgraphs": [
+        {
+          "subgoal_id": "bowl_source_open",
+          "nodes": [
+            {
+              "id": "navigate_to_bowl_source",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "kitchen_counter"
+              },
+              "achieves": []
+            },
+            {
+              "id": "open_bowl_source",
+              "contract_id": "mshab.set_table.open.kitchen_counter",
+              "arguments": {},
+              "achieves": [
+                "bowl_source_open"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_to_bowl_source",
+              "target": "open_bowl_source",
+              "relation": "enables"
+            }
+          ],
+          "achiever_nodes": [
+            "open_bowl_source"
+          ],
+          "execution_order": [
+            "navigate_to_bowl_source",
+            "open_bowl_source"
+          ]
+        },
+        {
+          "subgoal_id": "bowl_retrieved",
+          "nodes": [
+            {
+              "id": "navigate_to_bowl",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "024_bowl"
+              },
+              "achieves": []
+            },
+            {
+              "id": "pick_bowl_generic",
+              "contract_id": "mshab.set_table.pick.all",
+              "arguments": {
+                "object": "024_bowl"
+              },
+              "achieves": [
+                "bowl_retrieved"
+              ]
+            },
+            {
+              "id": "pick_bowl_specialized",
+              "contract_id": "mshab.set_table.pick.024_bowl",
+              "arguments": {},
+              "achieves": [
+                "bowl_retrieved"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_to_bowl",
+              "target": "pick_bowl_specialized",
+              "relation": "enables"
+            },
+            {
+              "source": "pick_bowl_generic",
+              "target": "navigate_to_bowl",
+              "relation": "requires"
+            },
+            {
+              "source": "pick_bowl_specialized",
+              "target": "pick_bowl_generic",
+              "relation": "is_a"
+            },
+            {
+              "source": "pick_bowl_specialized",
+              "target": "pick_bowl_generic",
+              "relation": "alternative_to"
+            },
+            {
+              "source": "pick_bowl_specialized",
+              "target": "pick_bowl_generic",
+              "relation": "fallback_to"
+            }
+          ],
+          "achiever_nodes": [
+            "pick_bowl_generic",
+            "pick_bowl_specialized"
+          ],
+          "execution_order": [
+            "navigate_to_bowl",
+            "pick_bowl_generic",
+            "pick_bowl_specialized"
+          ]
+        },
+        {
+          "subgoal_id": "bowl_placed",
+          "nodes": [
+            {
+              "id": "navigate_bowl_to_destination",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "dining_table"
+              },
+              "achieves": []
+            },
+            {
+              "id": "place_bowl_generic",
+              "contract_id": "mshab.set_table.place.all",
+              "arguments": {
+                "object": "024_bowl",
+                "destination": "dining_table"
+              },
+              "achieves": [
+                "bowl_placed"
+              ]
+            },
+            {
+              "id": "place_bowl_specialized",
+              "contract_id": "mshab.set_table.place.024_bowl",
+              "arguments": {
+                "destination": "dining_table"
+              },
+              "achieves": [
+                "bowl_placed"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_bowl_to_destination",
+              "target": "place_bowl_specialized",
+              "relation": "enables"
+            },
+            {
+              "source": "place_bowl_generic",
+              "target": "navigate_bowl_to_destination",
+              "relation": "requires"
+            },
+            {
+              "source": "place_bowl_specialized",
+              "target": "place_bowl_generic",
+              "relation": "is_a"
+            },
+            {
+              "source": "place_bowl_specialized",
+              "target": "place_bowl_generic",
+              "relation": "alternative_to"
+            },
+            {
+              "source": "place_bowl_specialized",
+              "target": "place_bowl_generic",
+              "relation": "fallback_to"
+            }
+          ],
+          "achiever_nodes": [
+            "place_bowl_generic",
+            "place_bowl_specialized"
+          ],
+          "execution_order": [
+            "navigate_bowl_to_destination",
+            "place_bowl_generic",
+            "place_bowl_specialized"
+          ]
+        },
+        {
+          "subgoal_id": "bowl_source_closed",
+          "nodes": [
+            {
+              "id": "close_bowl_source",
+              "contract_id": "mshab.set_table.close.kitchen_counter",
+              "arguments": {},
+              "achieves": [
+                "bowl_source_closed"
+              ]
+            },
+            {
+              "id": "navigate_back_to_bowl_source",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "kitchen_counter"
+              },
+              "achieves": []
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_back_to_bowl_source",
+              "target": "close_bowl_source",
+              "relation": "enables"
+            }
+          ],
+          "achiever_nodes": [
+            "close_bowl_source"
+          ],
+          "execution_order": [
+            "navigate_back_to_bowl_source",
+            "close_bowl_source"
+          ]
+        },
+        {
+          "subgoal_id": "apple_source_open",
+          "nodes": [
+            {
+              "id": "navigate_to_apple_source",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "fridge"
+              },
+              "achieves": []
+            },
+            {
+              "id": "open_apple_source",
+              "contract_id": "mshab.set_table.open.fridge",
+              "arguments": {},
+              "achieves": [
+                "apple_source_open"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_to_apple_source",
+              "target": "open_apple_source",
+              "relation": "enables"
+            }
+          ],
+          "achiever_nodes": [
+            "open_apple_source"
+          ],
+          "execution_order": [
+            "navigate_to_apple_source",
+            "open_apple_source"
+          ]
+        },
+        {
+          "subgoal_id": "apple_retrieved",
+          "nodes": [
+            {
+              "id": "navigate_to_apple",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "013_apple"
+              },
+              "achieves": []
+            },
+            {
+              "id": "pick_apple_generic",
+              "contract_id": "mshab.set_table.pick.all",
+              "arguments": {
+                "object": "013_apple"
+              },
+              "achieves": [
+                "apple_retrieved"
+              ]
+            },
+            {
+              "id": "pick_apple_specialized",
+              "contract_id": "mshab.set_table.pick.013_apple",
+              "arguments": {},
+              "achieves": [
+                "apple_retrieved"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_to_apple",
+              "target": "pick_apple_specialized",
+              "relation": "enables"
+            },
+            {
+              "source": "pick_apple_generic",
+              "target": "navigate_to_apple",
+              "relation": "requires"
+            },
+            {
+              "source": "pick_apple_specialized",
+              "target": "pick_apple_generic",
+              "relation": "is_a"
+            },
+            {
+              "source": "pick_apple_specialized",
+              "target": "pick_apple_generic",
+              "relation": "alternative_to"
+            },
+            {
+              "source": "pick_apple_specialized",
+              "target": "pick_apple_generic",
+              "relation": "fallback_to"
+            }
+          ],
+          "achiever_nodes": [
+            "pick_apple_generic",
+            "pick_apple_specialized"
+          ],
+          "execution_order": [
+            "navigate_to_apple",
+            "pick_apple_generic",
+            "pick_apple_specialized"
+          ]
+        },
+        {
+          "subgoal_id": "apple_placed",
+          "nodes": [
+            {
+              "id": "navigate_apple_to_destination",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "dining_table"
+              },
+              "achieves": []
+            },
+            {
+              "id": "place_apple_generic",
+              "contract_id": "mshab.set_table.place.all",
+              "arguments": {
+                "object": "013_apple",
+                "destination": "dining_table"
+              },
+              "achieves": [
+                "apple_placed"
+              ]
+            },
+            {
+              "id": "place_apple_specialized",
+              "contract_id": "mshab.set_table.place.013_apple",
+              "arguments": {
+                "destination": "dining_table"
+              },
+              "achieves": [
+                "apple_placed"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_apple_to_destination",
+              "target": "place_apple_specialized",
+              "relation": "enables"
+            },
+            {
+              "source": "place_apple_generic",
+              "target": "navigate_apple_to_destination",
+              "relation": "requires"
+            },
+            {
+              "source": "place_apple_specialized",
+              "target": "place_apple_generic",
+              "relation": "is_a"
+            },
+            {
+              "source": "place_apple_specialized",
+              "target": "place_apple_generic",
+              "relation": "alternative_to"
+            },
+            {
+              "source": "place_apple_specialized",
+              "target": "place_apple_generic",
+              "relation": "fallback_to"
+            }
+          ],
+          "achiever_nodes": [
+            "place_apple_generic",
+            "place_apple_specialized"
+          ],
+          "execution_order": [
+            "navigate_apple_to_destination",
+            "place_apple_generic",
+            "place_apple_specialized"
+          ]
+        },
+        {
+          "subgoal_id": "apple_source_closed",
+          "nodes": [
+            {
+              "id": "close_apple_source",
+              "contract_id": "mshab.set_table.close.fridge",
+              "arguments": {},
+              "achieves": [
+                "apple_source_closed"
+              ]
+            },
+            {
+              "id": "navigate_back_to_apple_source",
+              "contract_id": "mshab.set_table.navigate.all",
+              "arguments": {
+                "goal": "fridge"
+              },
+              "achieves": []
+            }
+          ],
+          "edges": [
+            {
+              "source": "navigate_back_to_apple_source",
+              "target": "close_apple_source",
+              "relation": "enables"
+            }
+          ],
+          "achiever_nodes": [
+            "close_apple_source"
+          ],
+          "execution_order": [
+            "navigate_back_to_apple_source",
+            "close_apple_source"
+          ]
+        }
+      ],
+      "cross_edges": [
+        {
+          "source_subgoal": "bowl_source_open",
+          "target_subgoal": "bowl_retrieved",
+          "source_node": null,
+          "target_node": "navigate_to_bowl",
+          "relation": "enables"
+        },
+        {
+          "source_subgoal": "bowl_retrieved",
+          "target_subgoal": "bowl_placed",
+          "source_node": null,
+          "target_node": "navigate_bowl_to_destination",
+          "relation": "enables"
+        },
+        {
+          "source_subgoal": "bowl_placed",
+          "target_subgoal": "bowl_source_closed",
+          "source_node": null,
+          "target_node": "navigate_back_to_bowl_source",
+          "relation": "enables"
+        },
+        {
+          "source_subgoal": "apple_source_open",
+          "target_subgoal": "apple_retrieved",
+          "source_node": null,
+          "target_node": "navigate_to_apple",
+          "relation": "enables"
+        },
+        {
+          "source_subgoal": "apple_retrieved",
+          "target_subgoal": "apple_placed",
+          "source_node": null,
+          "target_node": "navigate_apple_to_destination",
+          "relation": "enables"
+        },
+        {
+          "source_subgoal": "apple_placed",
+          "target_subgoal": "apple_source_closed",
+          "source_node": null,
+          "target_node": "navigate_back_to_apple_source",
+          "relation": "enables"
+        },
+        {
+          "source_subgoal": "bowl_source_closed",
+          "target_subgoal": "apple_source_open",
+          "source_node": null,
+          "target_node": "navigate_to_apple_source",
+          "relation": "enables"
+        }
+      ],
+      "_derived": true,
+      "nodes": [
+        {
+          "id": "close_apple_source",
+          "contract_id": "mshab.set_table.close.fridge",
+          "arguments": {},
+          "achieves": [
+            "apple_source_closed"
+          ]
+        },
+        {
+          "id": "close_bowl_source",
+          "contract_id": "mshab.set_table.close.kitchen_counter",
+          "arguments": {},
+          "achieves": [
+            "bowl_source_closed"
+          ]
+        },
+        {
+          "id": "navigate_apple_to_destination",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "dining_table"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_back_to_apple_source",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "fridge"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_back_to_bowl_source",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "kitchen_counter"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_bowl_to_destination",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "dining_table"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_to_apple",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "013_apple"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_to_apple_source",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "fridge"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_to_bowl",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "024_bowl"
+          },
+          "achieves": []
+        },
+        {
+          "id": "navigate_to_bowl_source",
+          "contract_id": "mshab.set_table.navigate.all",
+          "arguments": {
+            "goal": "kitchen_counter"
+          },
+          "achieves": []
+        },
+        {
+          "id": "open_apple_source",
+          "contract_id": "mshab.set_table.open.fridge",
+          "arguments": {},
+          "achieves": [
+            "apple_source_open"
+          ]
+        },
+        {
+          "id": "open_bowl_source",
+          "contract_id": "mshab.set_table.open.kitchen_counter",
+          "arguments": {},
+          "achieves": [
+            "bowl_source_open"
+          ]
+        },
+        {
+          "id": "pick_apple_generic",
+          "contract_id": "mshab.set_table.pick.all",
+          "arguments": {
+            "object": "013_apple"
+          },
+          "achieves": [
+            "apple_retrieved"
+          ]
+        },
+        {
+          "id": "pick_apple_specialized",
+          "contract_id": "mshab.set_table.pick.013_apple",
+          "arguments": {},
+          "achieves": [
+            "apple_retrieved"
+          ]
+        },
+        {
+          "id": "pick_bowl_generic",
+          "contract_id": "mshab.set_table.pick.all",
+          "arguments": {
+            "object": "024_bowl"
+          },
+          "achieves": [
+            "bowl_retrieved"
+          ]
+        },
+        {
+          "id": "pick_bowl_specialized",
+          "contract_id": "mshab.set_table.pick.024_bowl",
+          "arguments": {},
+          "achieves": [
+            "bowl_retrieved"
+          ]
+        },
+        {
+          "id": "place_apple_generic",
+          "contract_id": "mshab.set_table.place.all",
+          "arguments": {
+            "object": "013_apple",
+            "destination": "dining_table"
+          },
+          "achieves": [
+            "apple_placed"
+          ]
+        },
+        {
+          "id": "place_apple_specialized",
+          "contract_id": "mshab.set_table.place.013_apple",
+          "arguments": {
+            "destination": "dining_table"
+          },
+          "achieves": [
+            "apple_placed"
+          ]
+        },
+        {
+          "id": "place_bowl_generic",
+          "contract_id": "mshab.set_table.place.all",
+          "arguments": {
+            "object": "024_bowl",
+            "destination": "dining_table"
+          },
+          "achieves": [
+            "bowl_placed"
+          ]
+        },
+        {
+          "id": "place_bowl_specialized",
+          "contract_id": "mshab.set_table.place.024_bowl",
+          "arguments": {
+            "destination": "dining_table"
+          },
+          "achieves": [
+            "bowl_placed"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "source": "navigate_to_bowl_source",
+          "target": "open_bowl_source",
+          "relation": "enables"
+        },
+        {
+          "source": "navigate_to_bowl",
+          "target": "pick_bowl_specialized",
+          "relation": "enables"
+        },
+        {
+          "source": "pick_bowl_generic",
+          "target": "navigate_to_bowl",
+          "relation": "requires"
+        },
+        {
+          "source": "pick_bowl_specialized",
+          "target": "pick_bowl_generic",
+          "relation": "is_a"
+        },
+        {
+          "source": "pick_bowl_specialized",
+          "target": "pick_bowl_generic",
+          "relation": "alternative_to"
+        },
+        {
+          "source": "pick_bowl_specialized",
+          "target": "pick_bowl_generic",
+          "relation": "fallback_to"
+        },
+        {
+          "source": "navigate_bowl_to_destination",
+          "target": "place_bowl_specialized",
+          "relation": "enables"
+        },
+        {
+          "source": "place_bowl_generic",
+          "target": "navigate_bowl_to_destination",
+          "relation": "requires"
+        },
+        {
+          "source": "place_bowl_specialized",
+          "target": "place_bowl_generic",
+          "relation": "is_a"
+        },
+        {
+          "source": "place_bowl_specialized",
+          "target": "place_bowl_generic",
+          "relation": "alternative_to"
+        },
+        {
+          "source": "place_bowl_specialized",
+          "target": "place_bowl_generic",
+          "relation": "fallback_to"
+        },
+        {
+          "source": "navigate_back_to_bowl_source",
+          "target": "close_bowl_source",
+          "relation": "enables"
+        },
+        {
+          "source": "navigate_to_apple_source",
+          "target": "open_apple_source",
+          "relation": "enables"
+        },
+        {
+          "source": "navigate_to_apple",
+          "target": "pick_apple_specialized",
+          "relation": "enables"
+        },
+        {
+          "source": "pick_apple_generic",
+          "target": "navigate_to_apple",
+          "relation": "requires"
+        },
+        {
+          "source": "pick_apple_specialized",
+          "target": "pick_apple_generic",
+          "relation": "is_a"
+        },
+        {
+          "source": "pick_apple_specialized",
+          "target": "pick_apple_generic",
+          "relation": "alternative_to"
+        },
+        {
+          "source": "pick_apple_specialized",
+          "target": "pick_apple_generic",
+          "relation": "fallback_to"
+        },
+        {
+          "source": "navigate_apple_to_destination",
+          "target": "place_apple_specialized",
+          "relation": "enables"
+        },
+        {
+          "source": "place_apple_generic",
+          "target": "navigate_apple_to_destination",
+          "relation": "requires"
+        },
+        {
+          "source": "place_apple_specialized",
+          "target": "place_apple_generic",
+          "relation": "is_a"
+        },
+        {
+          "source": "place_apple_specialized",
+          "target": "place_apple_generic",
+          "relation": "alternative_to"
+        },
+        {
+          "source": "place_apple_specialized",
+          "target": "place_apple_generic",
+          "relation": "fallback_to"
+        },
+        {
+          "source": "navigate_back_to_apple_source",
+          "target": "close_apple_source",
+          "relation": "enables"
+        },
+        {
+          "source": "open_bowl_source",
+          "target": "navigate_to_bowl",
+          "relation": "enables"
+        },
+        {
+          "source": "pick_bowl_generic",
+          "target": "navigate_bowl_to_destination",
+          "relation": "enables"
+        },
+        {
+          "source": "pick_bowl_specialized",
+          "target": "navigate_bowl_to_destination",
+          "relation": "enables"
+        },
+        {
+          "source": "place_bowl_generic",
+          "target": "navigate_back_to_bowl_source",
+          "relation": "enables"
+        },
+        {
+          "source": "place_bowl_specialized",
+          "target": "navigate_back_to_bowl_source",
+          "relation": "enables"
+        },
+        {
+          "source": "open_apple_source",
+          "target": "navigate_to_apple",
+          "relation": "enables"
+        },
+        {
+          "source": "pick_apple_generic",
+          "target": "navigate_apple_to_destination",
+          "relation": "enables"
+        },
+        {
+          "source": "pick_apple_specialized",
+          "target": "navigate_apple_to_destination",
+          "relation": "enables"
+        },
+        {
+          "source": "place_apple_generic",
+          "target": "navigate_back_to_apple_source",
+          "relation": "enables"
+        },
+        {
+          "source": "place_apple_specialized",
+          "target": "navigate_back_to_apple_source",
+          "relation": "enables"
+        },
+        {
+          "source": "close_bowl_source",
+          "target": "navigate_to_apple_source",
+          "relation": "enables"
+        }
+      ],
+      "candidate_partial_order": [
+        "navigate_to_bowl_source",
+        "open_bowl_source",
+        "navigate_to_bowl",
+        "pick_bowl_generic",
+        "pick_bowl_specialized",
+        "navigate_bowl_to_destination",
+        "place_bowl_generic",
+        "place_bowl_specialized",
+        "navigate_back_to_bowl_source",
+        "close_bowl_source",
+        "navigate_to_apple_source",
+        "open_apple_source",
+        "navigate_to_apple",
+        "pick_apple_generic",
+        "pick_apple_specialized",
+        "navigate_apple_to_destination",
+        "place_apple_generic",
+        "place_apple_specialized",
+        "navigate_back_to_apple_source",
+        "close_apple_source"
+      ]
+    },
+    "3_grounded_skills": {
+      "close_apple_source": {
+        "contract_id": "mshab.set_table.close.fridge",
+        "arguments": {},
+        "preconditions": [
+          "reachable(fridge)",
+          "open(fridge)"
+        ],
+        "effects": [
+          "closed(fridge)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "closed(fridge)"
+        ],
+        "failure_modes": [
+          "handle_not_grasped",
+          "joint_blocked",
+          "force_limit"
+        ],
+        "deletes": [
+          "open(fridge)"
+        ]
+      },
+      "close_bowl_source": {
+        "contract_id": "mshab.set_table.close.kitchen_counter",
+        "arguments": {},
+        "preconditions": [
+          "reachable(kitchen_counter)",
+          "open(kitchen_counter)"
+        ],
+        "effects": [
+          "closed(kitchen_counter)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "closed(kitchen_counter)"
+        ],
+        "failure_modes": [
+          "handle_not_grasped",
+          "joint_blocked",
+          "force_limit"
+        ],
+        "deletes": [
+          "open(kitchen_counter)"
+        ]
+      },
+      "navigate_apple_to_destination": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "dining_table"
+        },
+        "preconditions": [
+          "present(dining_table)"
+        ],
+        "effects": [
+          "reachable(dining_table)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(dining_table)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_back_to_apple_source": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "fridge"
+        },
+        "preconditions": [
+          "present(fridge)"
+        ],
+        "effects": [
+          "reachable(fridge)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(fridge)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_back_to_bowl_source": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "preconditions": [
+          "present(kitchen_counter)"
+        ],
+        "effects": [
+          "reachable(kitchen_counter)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(kitchen_counter)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_bowl_to_destination": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "dining_table"
+        },
+        "preconditions": [
+          "present(dining_table)"
+        ],
+        "effects": [
+          "reachable(dining_table)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(dining_table)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_to_apple": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "013_apple"
+        },
+        "preconditions": [
+          "present(013_apple)"
+        ],
+        "effects": [
+          "reachable(013_apple)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(013_apple)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_to_apple_source": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "fridge"
+        },
+        "preconditions": [
+          "present(fridge)"
+        ],
+        "effects": [
+          "reachable(fridge)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(fridge)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_to_bowl": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "024_bowl"
+        },
+        "preconditions": [
+          "present(024_bowl)"
+        ],
+        "effects": [
+          "reachable(024_bowl)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(024_bowl)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "navigate_to_bowl_source": {
+        "contract_id": "mshab.set_table.navigate.all",
+        "arguments": {
+          "goal": "kitchen_counter"
+        },
+        "preconditions": [
+          "present(kitchen_counter)"
+        ],
+        "effects": [
+          "reachable(kitchen_counter)"
+        ],
+        "invariants": [],
+        "verification": [
+          "reachable(kitchen_counter)"
+        ],
+        "failure_modes": [
+          "navigation_timeout",
+          "collision_limit"
+        ],
+        "deletes": []
+      },
+      "open_apple_source": {
+        "contract_id": "mshab.set_table.open.fridge",
+        "arguments": {},
+        "preconditions": [
+          "reachable(fridge)",
+          "closed(fridge)"
+        ],
+        "effects": [
+          "open(fridge)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "open(fridge)"
+        ],
+        "failure_modes": [
+          "handle_not_grasped",
+          "joint_blocked",
+          "force_limit"
+        ],
+        "deletes": [
+          "closed(fridge)"
+        ]
+      },
+      "open_bowl_source": {
+        "contract_id": "mshab.set_table.open.kitchen_counter",
+        "arguments": {},
+        "preconditions": [
+          "reachable(kitchen_counter)",
+          "closed(kitchen_counter)"
+        ],
+        "effects": [
+          "open(kitchen_counter)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "open(kitchen_counter)"
+        ],
+        "failure_modes": [
+          "handle_not_grasped",
+          "joint_blocked",
+          "force_limit"
+        ],
+        "deletes": [
+          "closed(kitchen_counter)"
+        ]
+      },
+      "pick_apple_generic": {
+        "contract_id": "mshab.set_table.pick.all",
+        "arguments": {
+          "object": "013_apple"
+        },
+        "preconditions": [
+          "reachable(013_apple)",
+          "gripper_empty()"
+        ],
+        "effects": [
+          "holding(013_apple)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "holding(013_apple)"
+        ],
+        "failure_modes": [
+          "grasp_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "gripper_empty()"
+        ]
+      },
+      "pick_apple_specialized": {
+        "contract_id": "mshab.set_table.pick.013_apple",
+        "arguments": {},
+        "preconditions": [
+          "reachable(013_apple)",
+          "gripper_empty()"
+        ],
+        "effects": [
+          "holding(013_apple)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "holding(013_apple)"
+        ],
+        "failure_modes": [
+          "grasp_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "gripper_empty()"
+        ]
+      },
+      "pick_bowl_generic": {
+        "contract_id": "mshab.set_table.pick.all",
+        "arguments": {
+          "object": "024_bowl"
+        },
+        "preconditions": [
+          "reachable(024_bowl)",
+          "gripper_empty()"
+        ],
+        "effects": [
+          "holding(024_bowl)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "holding(024_bowl)"
+        ],
+        "failure_modes": [
+          "grasp_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "gripper_empty()"
+        ]
+      },
+      "pick_bowl_specialized": {
+        "contract_id": "mshab.set_table.pick.024_bowl",
+        "arguments": {},
+        "preconditions": [
+          "reachable(024_bowl)",
+          "gripper_empty()"
+        ],
+        "effects": [
+          "holding(024_bowl)"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "holding(024_bowl)"
+        ],
+        "failure_modes": [
+          "grasp_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "gripper_empty()"
+        ]
+      },
+      "place_apple_generic": {
+        "contract_id": "mshab.set_table.place.all",
+        "arguments": {
+          "object": "013_apple",
+          "destination": "dining_table"
+        },
+        "preconditions": [
+          "holding(013_apple)",
+          "reachable(dining_table)"
+        ],
+        "effects": [
+          "at(013_apple,dining_table)",
+          "gripper_empty()"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "at(013_apple,dining_table)"
+        ],
+        "failure_modes": [
+          "placement_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "holding(013_apple)"
+        ]
+      },
+      "place_apple_specialized": {
+        "contract_id": "mshab.set_table.place.013_apple",
+        "arguments": {
+          "destination": "dining_table"
+        },
+        "preconditions": [
+          "holding(013_apple)",
+          "reachable(dining_table)"
+        ],
+        "effects": [
+          "at(013_apple,dining_table)",
+          "gripper_empty()"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "at(013_apple,dining_table)"
+        ],
+        "failure_modes": [
+          "placement_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "holding(013_apple)"
+        ]
+      },
+      "place_bowl_generic": {
+        "contract_id": "mshab.set_table.place.all",
+        "arguments": {
+          "object": "024_bowl",
+          "destination": "dining_table"
+        },
+        "preconditions": [
+          "holding(024_bowl)",
+          "reachable(dining_table)"
+        ],
+        "effects": [
+          "at(024_bowl,dining_table)",
+          "gripper_empty()"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "at(024_bowl,dining_table)"
+        ],
+        "failure_modes": [
+          "placement_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "holding(024_bowl)"
+        ]
+      },
+      "place_bowl_specialized": {
+        "contract_id": "mshab.set_table.place.024_bowl",
+        "arguments": {
+          "destination": "dining_table"
+        },
+        "preconditions": [
+          "holding(024_bowl)",
+          "reachable(dining_table)"
+        ],
+        "effects": [
+          "at(024_bowl,dining_table)",
+          "gripper_empty()"
+        ],
+        "invariants": [
+          "collision_safe()"
+        ],
+        "verification": [
+          "at(024_bowl,dining_table)"
+        ],
+        "failure_modes": [
+          "placement_failed",
+          "object_dropped",
+          "force_limit"
+        ],
+        "deletes": [
+          "holding(024_bowl)"
+        ]
+      }
+    },
+    "4_contracts_and_policies": {
+      "contracts": [
+        {
+          "id": "mshab.set_table.close.fridge",
+          "contract_type": "close",
+          "target": "fridge",
+          "env_id": "CloseSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.close.fridge"
+          ]
+        },
+        {
+          "id": "mshab.set_table.close.kitchen_counter",
+          "contract_type": "close",
+          "target": "kitchen_counter",
+          "env_id": "CloseSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.close.kitchen_counter"
+          ]
+        },
+        {
+          "id": "mshab.set_table.navigate.all",
+          "contract_type": "navigate",
+          "target": "all",
+          "env_id": "NavigateSubtaskTrain-v0",
+          "max_episode_steps": 1000,
+          "policies": [
+            "rl.set_table.navigate.all"
+          ]
+        },
+        {
+          "id": "mshab.set_table.open.fridge",
+          "contract_type": "open",
+          "target": "fridge",
+          "env_id": "OpenSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.open.fridge"
+          ]
+        },
+        {
+          "id": "mshab.set_table.open.kitchen_counter",
+          "contract_type": "open",
+          "target": "kitchen_counter",
+          "env_id": "OpenSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.open.kitchen_counter"
+          ]
+        },
+        {
+          "id": "mshab.set_table.pick.013_apple",
+          "contract_type": "pick",
+          "target": "013_apple",
+          "env_id": "PickSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.pick.013_apple",
+            "rl.set_table.pick.all"
+          ]
+        },
+        {
+          "id": "mshab.set_table.pick.024_bowl",
+          "contract_type": "pick",
+          "target": "024_bowl",
+          "env_id": "PickSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.pick.024_bowl",
+            "rl.set_table.pick.all"
+          ]
+        },
+        {
+          "id": "mshab.set_table.pick.all",
+          "contract_type": "pick",
+          "target": "all",
+          "env_id": "PickSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.pick.all"
+          ]
+        },
+        {
+          "id": "mshab.set_table.place.013_apple",
+          "contract_type": "place",
+          "target": "013_apple",
+          "env_id": "PlaceSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.place.013_apple",
+            "rl.set_table.place.all"
+          ]
+        },
+        {
+          "id": "mshab.set_table.place.024_bowl",
+          "contract_type": "place",
+          "target": "024_bowl",
+          "env_id": "PlaceSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.place.024_bowl",
+            "rl.set_table.place.all"
+          ]
+        },
+        {
+          "id": "mshab.set_table.place.all",
+          "contract_type": "place",
+          "target": "all",
+          "env_id": "PlaceSubtaskTrain-v0",
+          "max_episode_steps": 200,
+          "policies": [
+            "rl.set_table.place.all"
+          ]
+        }
+      ],
+      "policies": [
+        {
+          "id": "rl.set_table.close.fridge",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/close/fridge/policy.pt",
+          "config": "rl/set_table/close/fridge/config.yml",
+          "contracts": [
+            "mshab.set_table.close.fridge"
+          ]
+        },
+        {
+          "id": "rl.set_table.close.kitchen_counter",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/close/kitchen_counter/policy.pt",
+          "config": "rl/set_table/close/kitchen_counter/config.yml",
+          "contracts": [
+            "mshab.set_table.close.kitchen_counter"
+          ]
+        },
+        {
+          "id": "rl.set_table.navigate.all",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_all_obj",
+          "checkpoint": "rl/set_table/navigate/all/policy.pt",
+          "config": "rl/set_table/navigate/all/config.yml",
+          "contracts": [
+            "mshab.set_table.navigate.all"
+          ]
+        },
+        {
+          "id": "rl.set_table.open.fridge",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/open/fridge/policy.pt",
+          "config": "rl/set_table/open/fridge/config.yml",
+          "contracts": [
+            "mshab.set_table.open.fridge"
+          ]
+        },
+        {
+          "id": "rl.set_table.open.kitchen_counter",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/open/kitchen_counter/policy.pt",
+          "config": "rl/set_table/open/kitchen_counter/config.yml",
+          "contracts": [
+            "mshab.set_table.open.kitchen_counter"
+          ]
+        },
+        {
+          "id": "rl.set_table.pick.013_apple",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/pick/013_apple/policy.pt",
+          "config": "rl/set_table/pick/013_apple/config.yml",
+          "contracts": [
+            "mshab.set_table.pick.013_apple"
+          ]
+        },
+        {
+          "id": "rl.set_table.pick.024_bowl",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/pick/024_bowl/policy.pt",
+          "config": "rl/set_table/pick/024_bowl/config.yml",
+          "contracts": [
+            "mshab.set_table.pick.024_bowl"
+          ]
+        },
+        {
+          "id": "rl.set_table.pick.all",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_all_obj",
+          "checkpoint": "rl/set_table/pick/all/policy.pt",
+          "config": "rl/set_table/pick/all/config.yml",
+          "contracts": [
+            "mshab.set_table.pick.013_apple",
+            "mshab.set_table.pick.024_bowl",
+            "mshab.set_table.pick.all"
+          ]
+        },
+        {
+          "id": "rl.set_table.place.013_apple",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/place/013_apple/policy.pt",
+          "config": "rl/set_table/place/013_apple/config.yml",
+          "contracts": [
+            "mshab.set_table.place.013_apple"
+          ]
+        },
+        {
+          "id": "rl.set_table.place.024_bowl",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_per_obj",
+          "checkpoint": "rl/set_table/place/024_bowl/policy.pt",
+          "config": "rl/set_table/place/024_bowl/config.yml",
+          "contracts": [
+            "mshab.set_table.place.024_bowl"
+          ]
+        },
+        {
+          "id": "rl.set_table.place.all",
+          "kind": "checkpoint",
+          "family": "rl",
+          "policy_type": "rl_all_obj",
+          "checkpoint": "rl/set_table/place/all/policy.pt",
+          "config": "rl/set_table/place/all/config.yml",
+          "contracts": [
+            "mshab.set_table.place.013_apple",
+            "mshab.set_table.place.024_bowl",
+            "mshab.set_table.place.all"
+          ]
+        }
+      ]
+    }
+  }
+}
